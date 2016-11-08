@@ -1,0 +1,511 @@
+##Red Wine Quality Dataset Analysis With R 
+#####(Udacity Data Analsysis Nanodegree)
+#### Donal O Farrell
+========================================================
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# Load all of the packages that you end up using
+# in your analysis in this code chunk.
+
+# Notice that the parameter "echo" was set to FALSE for this code chunk.
+# This prevents the code from displaying in the knitted HTML output.
+# You should set echo=FALSE for all code chunks in your file.
+
+library(ggplot2)
+library(GGally)
+library(dplyr)
+library(tidyr)
+```
+####Loading Data Set and Initial Analysis
+
+The dataset chosent for this project was the Red Wine Quality data provided from Udacity and loaded as a CSV file.
+
+The parameter X appears to be simply an index and there is no indication that it is ordered in any way, presumably this is to ensure a unique identifier for wines with the same charicteristics.
+
+There are multipe measures of acidity expressed and other chemical attributes expressed as float numbers. From the summary statistics, some initial observations about the typical attributes of red wine can be made: 
+
+Red wine is acidic, with a mean pH of 3.11, closely matched to is median and with a short, symetric IQR. This indicates a tight, well behaved (likely normal) distribution around the mean pH.
+
+There are no indications of the units used for the chemical constituents, probably ppm for chlorides / sulfides / sulphates though the residual sugars may be expressed as a percentage just as alchohol is.
+
+The summary stats of the residual sugars indicate the presence of a long tail or at least outliers on the upper end of the distributon due to the higher mean and very high max value relative to the median and the quartile positions. This may be as a result of desert wines included in the data set.
+
+Similar properties can be seen in the summary stats of alcohol percentage though the max value is far less extreme suggesting a assymetric distribution more strongly than the presence of outliers.
+
+Finally the quality parameter is a integer value that looks to be one of the keys variable of interest. It is a interger value ranging from 3 to 8, with a mean close to the cntral value of 5.6. The median is missmatched to the mean but its not clear if this is a symtom of the discrete nature of the variable.
+
+
+```{r echo=FALSE, Load_the_Data}
+# Load the Data
+setwd("C:/Users/Donal/Documents/Udacity Docs/Data Analysis with R/Wine Project")
+
+QR <- read.csv("wineQualityReds.csv")
+
+str(QR)
+
+
+summary(QR)
+
+#Residual sugar quantile assymetry
+print("Ratio of range of 50%-75% quantile range to 25%-50% quantile range showing assymetry of distrbution, skewed towards the higher values of Residual Sugar. ")
+Quantile_ratio_sugar <- (quantile(QR$residual.sugar, 3/4) - quantile(QR$residual.sugar, 1/2)) / (quantile(QR$residual.sugar, 1/2) - quantile(QR$residual.sugar, 1/4))
+Quantile_ratio_sugar
+# Could have created a funtion here but only plan on doing this one more time so CTRL+V will do.
+print("Ratio of range of 50%-75% quantile range to 25%-50% quantile range showing assymetry of distrbution, skewed towards the higher values of Alchohol. ")
+Quantile_ratio_alcohol <- (quantile(QR$alcohol, 3/4) - quantile(QR$alcohol, 1/2)) / (quantile(QR$alcohol, 1/2) - quantile(QR$alcohol, 1/4))
+Quantile_ratio_alcohol
+
+#based on the discrete values of quality, this parameter may be more usefull
+# as a factor. This will be completed later if required as calling this now ruins some of the graphs.
+#QR$quality <- factor(QR$quality, ordered = TRUE)
+
+```
+
+# Univariate Plots Section
+
+
+
+```{r echo=FALSE, Univariate_Plots_Quality}
+#Quality distrbution
+ggplot(data = QR, aes(x = quality)) +
+  geom_histogram(binwidth = 0.5) +
+  scale_x_continuous(breaks = seq(3,8,1),labels = seq(3,8,1))
+```
+
+From the plot of quality above it can be seen that most red wines are of quality value 5 or 6.
+
+
+```{r echo=FALSE, Univariate_Plots - X}
+#Q1 What is X?
+ggplot(data = QR, aes(x = QR$X)) +
+  geom_histogram(binwidth = 1)
+#Appears to be just an index
+range(QR$X)
+```
+An initial question concerned the nature of the variable "x", above is just confirming this is an index.
+
+```{r echo=FALSE, Univariate_Plots_pH}
+#pH histogram 
+ggplot(data = QR, aes(x = QR$pH)) +
+  geom_histogram(binwidth = 0.01)
+
+summary(QR$pH)
+
+#does this distribution change whith quality?
+
+ggplot(data = QR, aes(x = QR$pH)) +
+  geom_histogram(binwidth = 0.01) +
+  facet_wrap(~quality, nrow = 6)
+
+print("Mean pH")
+QR %>% group_by(quality) %>% summarise(avg = mean(pH))
+print("Median pH")
+QR %>% group_by(quality) %>% summarise(median = median(pH))
+
+```
+The distribution for pH appears normal, centered around a mean of 3.31 as discussed above.
+
+Faceting by quality doesn not yield any obvious changes to the distribution.
+There is mean and median difference between the best and worst quality wines though it is unlear at this stage if this is sigificant. 
+
+```{r echo=FALSE, warning=FALSE, Univariate_Plots_Residual_Sugar}
+summary(QR$residual.sugar)
+
+#residual sugar distribution
+
+ggplot(data = QR, aes(x = QR$residual.sugar)) +
+  geom_histogram(binwidth = 0.1)
+
+#residual sugar histrogram with outliers not visible
+
+ggplot(data = QR, aes(x = QR$residual.sugar)) +
+  geom_histogram(binwidth = 0.05) +
+  scale_x_continuous(limits = c(1,4), breaks = seq(1,4, 0.2))
+
+ggplot(data = QR, aes(x = QR$residual.sugar)) +
+  geom_histogram(binwidth = 0.01) +
+  scale_x_sqrt(limits = c(1,4), breaks = seq(1,4, 0.2))
+
+QR$Sweetness <- cut(QR$residual.sugar, 
+                    breaks = c(0,1,3,5,7,16),
+                    labels = c("Dry", "Off Dry","Sweet", "Port", "Dessert"))
+  
+ggplot(data = QR, aes(x = residual.sugar)) +
+  geom_histogram(binwidth = 0.1) +
+  facet_wrap(~Sweetness)
+
+ggplot(data = subset(QR, Sweetness == "Off Dry"), aes(x = residual.sugar)) +
+  geom_histogram(binwidth = 0.1)
+
+```
+
+Residual sugars has a roughly normal distribution but with a subststantial tial in the hight end of the dist. Applying a square root scale looks to contract the values for a more normal curve.
+
+Its not at all clear what unit this variable uses, some quick googling typically give residual sugar units in g/L but with typicall values of 2-20 g/L this does not fit the data distribution. It appears residual sugar here is expressed as a percentage (wt % most likely) with values ranging from the driest reds at 0.9 % to dessert wines at 15%.
+
+Creating a category for wine types based on sweetness might be appropriate her for seperatig different styles in future analysis, a basic categorization was found below and modifed for this data set (this is a bit crude and Dry wines are looking suspiciously sparse but will at least be usefull to subset out the outliers).
+
+https://www.winecurmudgeon.com/residual-sugar-in-wine-with-charts-and-graphs/
+
+
+```{r echo=FALSE,warning=FALSE, Univariate_Plots_Alchohol}
+#Alchohol histrogram
+
+ggplot(data = QR, aes(x = QR$alcohol)) +
+  geom_histogram(binwidth = 0.1)
+
+#Alchohol histrograms - new scales not applicable
+
+ggplot(data = QR, aes(x = QR$alcohol)) +
+  geom_histogram(binwidth = 0.1) +
+  scale_x_continuous(breaks = seq(1,20,1), limits = c(9,13))
+
+ggplot(data = QR, aes(x = QR$alcohol)) +
+  geom_histogram(bins = 50) +
+  scale_x_sqrt()
+
+ggplot(data = QR, aes(x = QR$alcohol)) +
+  geom_histogram(bins = 50) +
+  scale_x_log10()
+
+#alchohol % have direct impact on quality?
+ggplot(data = QR, aes(x = QR$alcohol)) +
+  geom_histogram(binwidth = 0.1) +
+  scale_x_continuous(breaks = seq(1,20,1), limits = c(9,13)) +
+  facet_wrap(~quality)
+
+```
+
+The distribution of alchohol content of the wines follow an unusual distribution with limited wines below 9 % volume and then a verly long fat tail up to about 13 %.
+Applying several scales to this histrogram failled to provide any new insights nor did breaking the histograms out by quality bin.
+The peak at 9.5 % is most apparent in Q = 5 wines. Its possible that this distribution reflects the most popular styles of mid range wines and gives more information about trends wine consumtion rather than quality.
+
+```{r echo=FALSE,warning=FALSE, Univariate_Plots_Density}
+#Density histrogram
+ggplot(data = QR, aes(x = QR$density)) +
+  geom_histogram(binwidth = 0.0001)
+
+
+ggplot(data = QR, aes(x = QR$density)) +
+  geom_histogram(binwidth = 0.0002) +
+  facet_wrap(~quality)
+
+Density.mean <- QR %>% group_by(quality) %>% 
+  summarise(avg = mean(density))
+Density.median <- QR %>% group_by(quality) %>%
+  summarise(median = median(density))
+
+#Plot below does not yield useful information as changig y axis limits removes the bars completley.
+ggplot(data = Density.mean, mapping = aes(x = quality, y = avg)) +
+  geom_bar(stat = 'identity')
+
+ggplot() +
+  geom_point(data = Density.mean, 
+             mapping = aes(x = quality, y = avg, color = 'red')) +
+  geom_point(data = Density.median, 
+             mapping = aes(x = quality, y = median, color = 'blue'))
+
+```
+
+Density appears normally distributed though splitting by quality seems to produce two slightly skewed distribution sfor the most populated wine qualities (5 and 6).
+Breaking the mean and median denstities out by quality appears to show an overall downward trend in densty for increasing quality.
+
+```{r echo=FALSE,warning=FALSE, Univariate_Plots_Acidity}
+
+#acidity
+summary(QR$fixed.acidity)
+
+ggplot(data = QR, aes(x = QR$fixed.acidity)) +
+  geom_histogram(binwidth = 0.1)
+
+
+ggplot(data = QR, aes(x = QR$fixed.acidity)) +
+  geom_histogram(bins = 50) +
+  scale_x_log10()
+
+ggplot(data = QR, aes(x = QR$volatile.acidity)) +
+  geom_histogram(binwidth = 0.01)
+
+ggplot(data = QR, aes(x = QR$volatile.acidity)) +
+  geom_histogram(binwidth = 0.01) +
+  facet_wrap(~quality)
+
+print("Mean Volatile Acidity")
+QR %>% group_by(quality) %>% summarise(avg = mean(volatile.acidity))
+
+QR.vinegar <- subset(QR, volatile.acidity > 1.2)
+QR.vinegar
+```
+
+Fixed acidity has a long tail for higher acidity and applying new scales doesn't seem to resolve this.
+
+Volitile acidity is also complex with a possible bimodality hidden in the distribution and a long tail for higher acidity. Breaking the distributions out by quality the binodality becomes slightly more pronounced.
+
+Information found online (http://waterhouse.ucdavis.edu/whats-in-wine/volatile-acidity) sugggests volitle acidity as a measure of wine spoilage as it largely corresponds to acetic acid levels in the wine. The mean volatile acidity for the lowest quality of wines is higher than that of better quality wines but this relation breaks down for the higher quality wines.
+
+Interstingly there are wines in the data set with volatile acidity beyond the US legal limit listed
+
+```{r echo=FALSE,warning=FALSE, Univariate_Plots_Citric_Acid}
+
+#citric acid, pretty flat with lots of 0s
+ggplot(data = QR, aes(x = QR$citric.acid)) +
+  geom_histogram(binwidth = 0.01)
+
+# percent 0's
+count(subset(QR, citric.acid == 0)) / count(QR)
+
+# histogram for nonzero only
+ggplot(data = subset(QR, citric.acid !=0), aes(x = citric.acid)) +
+  geom_histogram(binwidth = 0.01)
+
+#distribution of zero citric acid across quality bins 
+ggplot(data = subset(QR, citric.acid ==0), aes(x = quality)) +
+  geom_histogram(binwidth = 0.5)
+
+#distribution of zero citric acid across quality bins 
+#with nonzero counts stacked
+ggplot(data = QR,aes(x = quality)) +
+  ggtitle('Counts of wine with no citric acid (RED) and containing citric acid (YELLOW) by quality') +
+  geom_histogram(data = subset(QR, citric.acid != 0),
+                 binwidth = 0.5, fill = 'yellow') +
+  geom_histogram(data = subset(QR, citric.acid == 0),
+                 binwidth = 0.5, fill = 'red', position = 'stack')
+
+
+```
+
+The citric acid content is pretty flat (~8%) with high volume of 0's and another spike at 0.5. Seperating out the zero results shows there is no citric acid present in the highest quality bucket 
+
+
+```{r echo=FALSE,warning=FALSE, Univariate_Plots_Chlorides}
+#chlorides, normal with lots of outliers
+ggplot(data = QR, aes(x = QR$chlorides)) +
+  geom_histogram(binwidth = 0.001)
+
+ggplot(data = QR, aes(x = QR$chlorides)) +
+  geom_histogram(binwidth = 0.001) +
+  xlim(c(0.04,0.13))
+
+summary(subset(QR$chlorides, 0.04 <= QR$chlorides & QR$chlorides <= 0.13))
+
+ggplot(data = QR, aes(x = QR$chlorides)) +
+  geom_histogram(binwidth = 0.001) +
+  xlim(c(0.04,0.13)) +
+  facet_wrap(~quality, nrow = 6)
+
+#where are these outliers coming from
+high.chlorides <- subset(QR, chlorides > 0.15)
+
+#oultiers have higher sugars, ciric acid and sulphates. 
+#appear at first glance to be lower quality
+
+HC.delta <- ( summarise_each(high.chlorides, funs(mean)) - 
+               summarise_each(QR, funs(mean)) ) /
+  summarise_each(QR, funs(sd))
+
+glimpse(HC.delta)
+
+```
+
+The cholrides content looks to have a normal distribution near the bottom of the scale but this is obscured by a very long tail of outliers. Shrinking the limits gives a more normal distribution centred aroun a mean of ~ 0.08.
+
+It would be interesting to know what the properties of the high chloride outliers that can be seen are and if there are any clues as to what causes such high chloride contenct.
+
+The table HC.delta gives the difference between the standardized mean properties of the high chloride wines and the origional complete data set. Standardization was completed to make the deltas comparable across all the parameters though it runs the risk of obscuring in the scale of some deltas where stDev is disporportunatly high due to outliers.
+
+From the table generated it can be seen that the high chloride wines are also generally high in sulphates. They also appear higher citric acid, residual sugars and denstiy, and lower in pH, alchohol and quality. A statistical test such as a t-test would be useful to furhter investigate the significance of these differences if needed.
+
+```{r echo=FALSE,warning=FALSE, Univariate_Plots_Sulfur_Dioxide}
+#sulfur dioxide
+ggplot(data = QR, aes(x = QR$free.sulfur.dioxide)) +
+  geom_histogram(binwidth = 1)
+
+ggplot(data = QR, aes(x = QR$total.sulfur.dioxide)) +
+  geom_histogram(binwidth = 1)
+
+
+ggplot(data = QR, aes(x = QR$free.sulfur.dioxide)) +
+  geom_histogram(bins = 50) +
+  scale_x_log10()
+
+ggplot(data = QR, aes(x = QR$total.sulfur.dioxide)) +
+  geom_histogram(bins = 50) +
+  scale_x_log10()
+
+#no sqrt distribution, log10 works best
+ggplot(data = QR, aes(x = QR$total.sulfur.dioxide)) +
+  geom_histogram(bins = 50) +
+  scale_x_sqrt()
+
+#facet wrap, hint a bimodalty for Q = 6
+ggplot(data = QR, aes(x = QR$total.sulfur.dioxide)) +
+  geom_histogram(bins = 70) +
+  scale_x_log10() +
+  facet_wrap(~quality)
+
+
+#non free sulfur dioxide
+QR$nonfree.sulfur.dioxide <- QR$total.sulfur.dioxide - QR$free.sulfur.dioxide
+
+ggplot(data = QR, aes(x = QR$nonfree.sulfur.dioxide)) +
+  geom_histogram(binwidth = 1)
+
+ggplot(data = QR, aes(x = QR$nonfree.sulfur.dioxide)) +
+  geom_histogram(bins = 70) +
+  scale_x_log10()
+```
+
+There are two measures of sulfur dioxide in the data set, free and total. Both appear to have extremely long tailed distributions but applying a log10 scale to the plots created a more normal distribution.
+Facet wrap of the totlal sulfur dioxide shows no major shifts in the distribution though  a slight hint of bimodality can be seen for quality = 6.
+
+Assuming the free suflur dioxide is a subset of the total, a new variable for the non-free sulfur dioxided was created to investigate if there us anything of interest in the residual of the two variables. The non-free distribution is a similar distribution to the other measures of suflur dioxide, with a log scale giving a more normal distribution.
+
+```{r echo=FALSE,warning=FALSE, Univariate_Plots_Sulphates}
+#sulphates
+ggplot(data = QR, aes(x = QR$sulphates)) +
+  geom_histogram(binwidth = 0.01)
+
+
+ggplot(data = QR, aes(x = QR$sulphates)) +
+  geom_histogram(binwidth = 0.01) + 
+  xlim(0.35,1)
+
+#try log10 scales
+ggplot(data = QR, aes(x = QR$sulphates)) +
+  geom_histogram(bins = 100) +
+  scale_x_log10(limits = c(0.35,1))
+
+#sqrt not as good
+ggplot(data = QR, aes(x = QR$sulphates)) +
+  geom_histogram(bins = 100) +
+  scale_x_sqrt(limits = c(0.35,1))
+
+ggplot(data = QR, aes(x = QR$sulphates, fill = quality)) +
+  geom_histogram(bins = 100) +
+  scale_x_log10(limits = c(0.35,1)) +
+  facet_wrap(~quality)
+
+```
+
+The sulfate is another long tailled distribution where applying a log10 scale leads a far more normal looking plot. Applying a square root also helps but is less effective. Faceting over quality shows no major differences between the distributions for difference for different quality levels.
+
+```{r echo=FALSE,warning=FALSE, Univariate_Plots_Total_Additives}
+
+QR$Total.additives <- QR$sulphates + QR$chlorides
+
+ggplot(data = QR, aes(x = Total.additives)) +
+  geom_histogram(binwidth = 0.01)
+
+ggplot(data = QR, aes(x = Total.additives)) +
+  geom_histogram(binwidth = 0.01) +
+  xlim(0.4,1.2)
+
+ggplot(data = QR, aes(x = Total.additives)) +
+  geom_histogram(bins = 100) +
+  scale_x_log10(limits = c(0.4,1.2))
+
+```
+
+Finnally, due to the similarity in distributions and the hint of connections between the variables, a new variale was created ('Total.additives') that is the simple sum of sulphates and chlorides.
+
+# Univariate Analysis
+
+### What is the structure of your dataset?
+
+The data set consists of 14 variables related to the chemical properties of red wines. Except fot an index (X) and quality that are expressed as integers, all the parameters are expresse as floats numbers.
+
+### What is/are the main feature(s) of interest in your dataset?
+
+The main feature of the dataset is the assigned quality of the wines, a key question of this investigation will be to see how the other properties of the wines influence this quality factor. 
+
+### What other features in the dataset do you think will help support your investigation into your feature(s) of interest?
+
+Other important features are the residual sugar, alchohol and ph variable as these are likely to have th biggest impact on the properties of the wine.
+
+### Did you create any new variables from existing variables in the dataset?
+
+New variables nonfree.sulfur.dioxide and Total.additives were created.
+
+### Of the features you investigated, were there any unusual distributions? Did you perform any operations on the data to tidy, adjust, or change the form of the data? If so, why did you do this?
+
+Several variables (suphides and sulfur dioxide) appear to be log10 disributed and residual sugars appears square root distributed.
+
+No changes were made to ajust the data at this stage. It may be useful to change the quality data to a factor, but so far this has not been done for ease of plotting.
+
+# Bivariate Plots Section
+```{r echo=FALSE, Bivariate_Plots}
+ggpairs(subset(QR, select =  c(quality, residual.sugar, 
+                               sulphates, pH, citric.acid)))
+
+
+#ggpairs to investigate how different measures of acidity interact
+ggpairs(subset(QR, select =  c(fixed.acidity, 
+                                   volatile.acidity,pH, citric.acid)))
+
+```
+
+
+Looking at the different measures of acidity there are clear relationships between some of the different measures of acidity 
+
+```{r echo=FALSE, Bivariate_Plots}
+
+ggplot(data = QR, aes(x = quality, y = citric.acid, group = quality)) +
+  geom_boxplot()
+
+```
+
+# Bivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. How did the feature(s) of interest vary with other features in the dataset?
+
+### Did you observe any interesting relationships between the other features (not the main feature(s) of interest)?
+
+### What was the strongest relationship you found?
+
+
+
+
+# Multivariate Plots Section
+
+```{r echo=FALSE, Multivariate_Plots}
+
+```
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. Were there features that strengthened each other in terms of looking at your feature(s) of interest?
+
+### Were there any interesting or surprising interactions between features?
+
+### OPTIONAL: Did you create any models with your dataset? Discuss the strengths and limitations of your model.
+
+------
+
+# Final Plots and Summary
+
+### Plot One
+```{r echo=FALSE, Plot_One}
+
+```
+
+### Description One
+
+
+### Plot Two
+```{r echo=FALSE, Plot_Two}
+
+```
+
+### Description Two
+
+
+### Plot Three
+```{r echo=FALSE, Plot_Three}
+
+```
+
+### Description Three
+
+------
+
+# Reflection
