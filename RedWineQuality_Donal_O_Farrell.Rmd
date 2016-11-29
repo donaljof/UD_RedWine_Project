@@ -15,6 +15,7 @@ library(ggplot2)
 library(GGally)
 library(dplyr)
 library(tidyr)
+library(plotly)
 ```
 ####Loading Data Set and Initial Analysis
 
@@ -433,39 +434,231 @@ Several variables (suphides and sulfur dioxide) appear to be log10 disributed an
 No changes were made to ajust the data at this stage. It may be useful to change the quality data to a factor, but so far this has not been done for ease of plotting.
 
 # Bivariate Plots Section
-```{r echo=FALSE, Bivariate_Plots}
-ggpairs(subset(QR, select =  c(quality, residual.sugar, 
-                               sulphates, pH, citric.acid)))
+```{r echo=FALSE, Bivariate_Plots_ggpairs}
+#variables mostlikely to affect quality
+ggpairs(subset(QR, select =  c(quality, residual.sugar,sulphates, pH, citric.acid)))
+
+#More variable sthat may impact quality
+ggpairs(subset(QR, select =  c(quality, fixed.acidity, volatile.acidity,
+                               chlorides, total.sulfur.dioxide)))
 
 
 #ggpairs to investigate how different measures of acidity interact
 ggpairs(subset(QR, select =  c(fixed.acidity, 
                                    volatile.acidity,pH, citric.acid)))
 
+
+cor.test(QR$quality, QR$residual.sugar)
+
+## Plam : pick top correllatted variable with quality, chart them out and creat heat maps of top quality winages.
+
+as.list(colnames(QR))
+
+length( QR$"chlorides")
+length(QR$quality)
+QR.corr
+
+QR$"X"
+
+thing <- `colnames<-`(QR, "X")
+
 ```
 
+From the plotted variable some positive correlation between sulphates and citric acid can be seen.
 
-Looking at the different measures of acidity there are clear relationships between some of the different measures of acidity 
+A negative correlation between pH and citrica acid is seen, it is likely this is one of the several acidity indicators that contributes to pH. The negetive correlation makes sense as pH decreases with increasing acidity.
 
-```{r echo=FALSE, Bivariate_Plots}
+The strongest correlation to quality form the second ggally matric is the negitive correllation to volatile acidity (-0.391) 
+Top 4 influencers of wine quality bucket are below. This correlation test only gives a measure of linear dependance so focusing on these variable may exclude any non linear relationships but this is beyond the scope of this first pass at the data set.
+sulpates = 0.251
+citric acid = 0.226
+volatile acidity = - 0.391
+total sulphur dioxided = -0.185
+
+Looking at the different measures of acidity there are clear relationships between some of the different measures of acidity. The strongest correlation is a negative correlatoon between pH and fixed acidity 
+
+There is a correlation between citric acid content and fixed acidity that suggests the possibility that these are not indedendant measures of acidity and the fixed acidity of a wine incorporates the impact of the citric acid content. 
+
+```{r echo=FALSE, Bivariate_Plots_citricAcid}
 
 ggplot(data = QR, aes(x = quality, y = citric.acid, group = quality)) +
-  geom_boxplot()
+  geom_boxplot() +
+  geom_point(position = 'jitter', alpha = 0.3)
+
+cor(x = QR$quality, y = QR$citric.acid)
+
+#QR.CA_summary <- QR <%< ?what was the plan here?
+```
+
+From the boxplot of citric acid by quality we can see the correllation between the citric acid content and quality. There is a slight increase in mean citric acid content betwen quality buckets 5 ad 6 but the big differences can be seen comparing the low quality buckets, with loww citric acid, and the hight quality buckets that show the reverse. 
+
+```{r echo=FALSE, Bivariate_Plots_Residual_Sugar}
+
+ggplot(data = QR, aes(x = quality, y = residual.sugar, group = quality)) +
+  geom_boxplot() +
+  geom_point(position = 'jitter', alpha = 0.1)
+
+ggplot(data = QR, aes(x = quality, y = residual.sugar, group = quality)) +
+  geom_boxplot() +
+  geom_point(position = 'jitter', alpha = 0.1) +
+  ylim(1,6)
+
+ggplot(data = QR, aes(x = residual.sugar, y = density)) +
+  geom_point()
+
+ggplot(data = QR, aes(x = residual.sugar, y = density)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth() +
+  scale_x_continuous(limits = c(1,4))
+
+cor(x = QR$residual.sugar, y = QR$density)
+
+ggplot(data = QR, aes(x = residual.sugar, y = density)) +
+  geom_point(alpha = 0.2) +
+  scale_x_sqrt() +
+  ggtitle("density vs sqrt residual sugar")
 
 ```
+
+Looking at residual sugars across the levels of quality there appears to be no correllation between residual sugar and quality.
+
+A scatter plot of residual sugar and density shows an influence of residual sugar on the density of the wine. This would be expected given the higher density of sugards relative to the other main constituents (water and alchohol) though this correlation breaks down for the sweetest wines.  
+
+```{r echo=FALSE, Bivariate_Plots_Chlorides}
+
+QR.means <- subset(QR, select = -Sweetness)  %>% group_by(quality) %>% summarise_each(funs(mean))
+
+QR.median <- subset(QR, select = -Sweetness) %>% 
+  group_by(quality) %>%
+  summarise_each(funs(median))
+
+ggplot(data = QR, aes(x = quality, y = chlorides)) +
+  geom_point(position = 'jitter', alpha = 0.2) +
+  geom_line(data = QR.means)
+
+ggplot(data = QR, aes(x = quality, y = chlorides)) +
+  geom_point(position = 'jitter', alpha = 0.2) +
+  geom_line(data = QR.means) +
+  scale_y_continuous(limits = c(0, 0.2))
+
+
+ggplot(data = QR, aes(x = quality, y = chlorides)) +
+  geom_point(position = 'jitter', alpha = 0.2) +
+  geom_line(data = QR.means, aes(color = 'mean')) +
+  geom_line(data = QR.median, aes(color = 'median')) +
+  scale_y_continuous(limits = c(0, 0.2))
+
+```
+
+Chloride content looks static along the quality buckets.
+
+
+```{r echo=FALSE, Total_Sulphur_dioxide}
+
+ggplot(data = QR, aes(x = quality, y = QR$total.sulfur.dioxide)) +
+  geom_point(position = 'jitter', alpha = 0.1) +
+  geom_line(data = QR.means, lineend = 'round', aes(x = quality, y = total.sulfur.dioxide, color = 'Mean'), size = 1.5) +
+  geom_line(data = QR.median, lineend = 'round', aes(x = quality, y = total.sulfur.dioxide, color = 'Median'), size = 1.5)
+
+cor.test(QR$quality, QR$total.sulfur.dioxide)
+
+
+```
+
+From the trends in mean and median total sulfur dioxide over the different quality bins we can see there is not a clear linear negative correllation that the R value would suggest.
+
+The clearest differences can be seen in the populations of bins 5, 6 and 7. The upper distribution of sulfur dioxide is eroded away giving a smaller range of sulfur dioxide values as the quality increases (ignoring outliers). This trend cannot be seen for the very low or very high quality buckets due to the lower overall populations. Its possible that if the data set was expanded to include a far higher number of observations for the low/high end of the quality scale the ranges would follow the same pattern as 5/6/7.
+
+
+```{r echo=FALSE, Bivariate_Plots_Suphates}
+
+ggplot(data = QR, aes(x = quality, y = sulphates)) +
+  geom_point(alpha = 0.3, position = 'jitter') +
+  geom_line(data = QR.means, lineend = 'round', 
+            aes(x = quality, y = sulphates, color = 'Mean'), 
+            size = 1.5) +
+  geom_line(data = QR.median, lineend = 'round', 
+            aes(x = quality, y = sulphates, 
+                color = 'Median'), size = 1.5)
+
+cor.test(QR$quality, QR$sulphates)
+
+```
+
+The correllation between wine quality and sulphates appears more clear cut with a liner relationship between sulphates and quality evident in the bivariate plot above. The trends in mean/median hold most clearly for the highly populated quality buckets and the pattern falters for the highest/lowest quality wines. Again, a data set with a higher number of low/high quality wines might hold the linear relationship more closely. The value for Pearson's R (0.25) is in line with the observed positive linear dependance.
+
+```{r echo=FALSE, Bivariate_Plots_Volatile_Acidity}
+
+ggplot(data = QR, aes(x = quality, y = volatile.acidity)) +
+  geom_point(alpha = 0.3, position = 'jitter') +
+  geom_line(data = QR.means, lineend = 'round', 
+            aes(x = quality, y = volatile.acidity, color = 'Mean'), 
+            size = 1.5) +
+  geom_line(data = QR.median, lineend = 'round', 
+            aes(x = quality, y = volatile.acidity, 
+                color = 'Median'), size = 1.5)
+
+cor.test(QR$quality, QR$volatile.acidity)
+
+#T test of volatile acidity means for quality buckets 7 and 8.
+x = subset(QR, quality = 7)$volatile.acidity
+y = subset(QR, quality = 8)$volatile.acidity
+t.test(x, y)
+
+#Subset of data for only the most populous quality buckets.
+QR.highN <- subset(QR, quality <= 7 & quality >= 5)    
+
+ggplot(data = QR.highN, aes(x = volatile.acidity)) +
+  geom_histogram(binwidth = 0.02) +
+  xlim(0.1,1) +
+  facet_wrap(~quality,ncol = 1)
+
+```
+
+The clearest linear correlation between quality and the other variables in the data set appears to be the negative relationship between quality and volatile acidity. This relationship is bourne out in both the large negative R value (-0.39) and the bivariate chart. Only for the highest quality wines does the relationship break down, either because of low population or because the difference between 7 and 8 quality wines is not expressed in volatile acidity.
+A t-test of the volatile acidity in quality values 7 and 8 indicates the means are matched within the 95% confidence interval. This statistical test might not be valid given the large difference in populations and the p value of 1 is highly suspicious. Despite this it doesn't seem unreasonable to conclude the means are matched. This would boost the arguement that there the volatile acidity stabalizes at 7 and there is no further reduction for higher quality wines.
 
 # Bivariate Analysis
 
 ### Talk about some of the relationships you observed in this part of the investigation. How did the feature(s) of interest vary with other features in the dataset?
 
+There are clear relationships between some variables in the data set. Most striking is the negative relationship between wine quality and volatile acidity. With the exception of the highest quality wines there is a clear downward trend with increasing volatile acidity. This makes sense based the make-up of volatile acidity as composing mainly of acetic acid and other acids considered as spoilants that would negativly impact the flavour.
+
+Less important variables impacting quality include citric acid, sulphates and total sulfur dioxide. The relationships between these variables are less straightforward and break down for the lowest and highest quality buckets.
+ 
+
+
+Wine information from:
+http://waterhouse.ucdavis.edu/whats-in-wine/volatile-acidity
+
 ### Did you observe any interesting relationships between the other features (not the main feature(s) of interest)?
+
+
+Other than looking at quality, we can see relationships between citric acid and pH that would be expected (pH being a measure of acidity). A linear relationship between residual sugars and density was also observed as would be expected given the large ,olecular weight of sugars.
 
 ### What was the strongest relationship you found?
 
-
+As mentioned above the strongest relationship was the negative impact of volatile acidity on the wine quality.
 
 
 # Multivariate Plots Section
+
+```{r echo=FALSE, Multivariate_Plots}
+
+#plot_ly(z = ~volcano, type = "contour")
+
+QR.heat <- subset(QR, select = c('quality', 'volatile.acidity', 'sulphates'))
+
+
+
+ggplot(data = QR.heat, 
+       aes(x =  volatile.acidity, y =  sulphates, z = quality)) +
+  geom_contour()
+
+
+
+```
+
 
 ```{r echo=FALSE, Multivariate_Plots}
 
