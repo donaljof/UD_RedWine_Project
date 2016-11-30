@@ -16,6 +16,8 @@ library(GGally)
 library(dplyr)
 library(tidyr)
 library(plotly)
+
+#single line to check if my git hub is syncing properly
 ```
 ####Loading Data Set and Initial Analysis
 
