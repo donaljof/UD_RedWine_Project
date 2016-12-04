@@ -1,6 +1,9 @@
+---
+output: html_document
+---
 ##Red Wine Quality Dataset Analysis With R 
 #####(Udacity Data Analsysis Nanodegree)
-#### Donal O Farrell
+####Donal O Farrell
 ========================================================
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
@@ -41,7 +44,7 @@ Finally the quality parameter is a integer value that looks to be one of the key
 
 ```{r echo=FALSE, Load_the_Data}
 # Load the Data
-setwd("C:/Users/Donal/Documents/Udacity Docs/Data Analysis with R/Wine Project")
+#setwd("C:/Users/Donal/Documents/Udacity Docs/Data Analysis with R/Wine Project")
 setwd("C:/Users/donaljof/Documents/udacity docs/Data Analysis with R/UD_RedWine_Project")
 
 
@@ -83,7 +86,7 @@ From the plot of quality above it can be seen that most red wines are of quality
 
 ```{r echo=FALSE, Univariate_Plots - X}
 #Q1 What is X?
-ggplot(data = QR, aes(x = QR$X)) +
+ggplot(data = QR, aes(x = QX)) +
   geom_histogram(binwidth = 1)
 #Appears to be just an index
 range(QR$X)
@@ -92,14 +95,14 @@ An initial question concerned the nature of the variable "x", above is just conf
 
 ```{r echo=FALSE, Univariate_Plots_pH}
 #pH histogram 
-ggplot(data = QR, aes(x = QR$pH)) +
+ggplot(data = QR, aes(x = pH)) +
   geom_histogram(binwidth = 0.01)
 
 summary(QR$pH)
 
 #does this distribution change whith quality?
 
-ggplot(data = QR, aes(x = QR$pH)) +
+ggplot(data = QR, aes(x = pH)) +
   geom_histogram(binwidth = 0.01) +
   facet_wrap(~quality, nrow = 6)
 
@@ -119,20 +122,20 @@ summary(QR$residual.sugar)
 
 #residual sugar distribution
 
-ggplot(data = QR, aes(x = QR$residual.sugar)) +
+ggplot(data = QR, aes(x = residual.sugar)) +
   geom_histogram(binwidth = 0.1)
 
 #residual sugar histrogram with outliers not visible
 
-ggplot(data = QR, aes(x = QR$residual.sugar)) +
+ggplot(data = QR, aes(x = residual.sugar)) +
   geom_histogram(binwidth = 0.05) +
   scale_x_continuous(limits = c(1,4), breaks = seq(1,4, 0.2))
 
-ggplot(data = QR, aes(x = QR$residual.sugar)) +
+ggplot(data = QR, aes(x = residual.sugar)) +
   geom_histogram(binwidth = 0.01) +
   scale_x_sqrt(limits = c(1,4), breaks = seq(1,4, 0.2))
 
-QR$Sweetness <- cut(QR$residual.sugar, 
+QR$Sweetness <- cut(residual.sugar, 
                     breaks = c(0,1,3,5,7,16),
                     labels = c("Dry", "Off Dry","Sweet", "Port", "Dessert"))
   
@@ -151,31 +154,31 @@ Its not at all clear what unit this variable uses, some quick googling typically
 
 Creating a category for wine types based on sweetness might be appropriate her for seperatig different styles in future analysis, a basic categorization was found below and modifed for this data set (this is a bit crude and Dry wines are looking suspiciously sparse but will at least be usefull to subset out the outliers).
 
-https://www.winecurmudgeon.com/residual-sugar-in-wine-with-charts-and-graphs/
+Source of residual sugars information: https://www.winecurmudgeon.com/residual-sugar-in-wine-with-charts-and-graphs/
 
 
 ```{r echo=FALSE,warning=FALSE, Univariate_Plots_Alchohol}
 #Alchohol histrogram
 
-ggplot(data = QR, aes(x = QR$alcohol)) +
+ggplot(data = QR, aes(x = alcohol)) +
   geom_histogram(binwidth = 0.1)
 
 #Alchohol histrograms - new scales not applicable
 
-ggplot(data = QR, aes(x = QR$alcohol)) +
+ggplot(data = QR, aes(x = alcohol)) +
   geom_histogram(binwidth = 0.1) +
   scale_x_continuous(breaks = seq(1,20,1), limits = c(9,13))
 
-ggplot(data = QR, aes(x = QR$alcohol)) +
+ggplot(data = QR, aes(x = alcohol)) +
   geom_histogram(bins = 50) +
   scale_x_sqrt()
 
-ggplot(data = QR, aes(x = QR$alcohol)) +
+ggplot(data = QR, aes(x = alcohol)) +
   geom_histogram(bins = 50) +
   scale_x_log10()
 
 #alchohol % have direct impact on quality?
-ggplot(data = QR, aes(x = QR$alcohol)) +
+ggplot(data = QR, aes(x = alcohol)) +
   geom_histogram(binwidth = 0.1) +
   scale_x_continuous(breaks = seq(1,20,1), limits = c(9,13)) +
   facet_wrap(~quality)
@@ -188,18 +191,18 @@ The peak at 9.5 % is most apparent in Q = 5 wines. Its possible that this distri
 
 ```{r echo=FALSE,warning=FALSE, Univariate_Plots_Density}
 #Density histrogram
-ggplot(data = QR, aes(x = QR$density)) +
+ggplot(data = QR, aes(x = density)) +
   geom_histogram(binwidth = 0.0001)
 
 
-ggplot(data = QR, aes(x = QR$density)) +
+ggplot(data = QR, aes(x = density)) +
   geom_histogram(binwidth = 0.0002) +
   facet_wrap(~quality)
 
 Density.mean <- QR %>% group_by(quality) %>% 
-  summarise(avg = mean(density))
+  summarise(avg_density = mean(density))
 Density.median <- QR %>% group_by(quality) %>%
-  summarise(median = median(density))
+  summarise(median_density = median(density))
 
 #Plot below does not yield useful information as changig y axis limits removes the bars completley.
 ggplot(data = Density.mean, mapping = aes(x = quality, y = avg)) +
@@ -207,9 +210,9 @@ ggplot(data = Density.mean, mapping = aes(x = quality, y = avg)) +
 
 ggplot() +
   geom_point(data = Density.mean, 
-             mapping = aes(x = quality, y = avg, color = 'red')) +
+             mapping = aes(x = quality, y = avg_density, color = 'Mean Desnity')) +
   geom_point(data = Density.median, 
-             mapping = aes(x = quality, y = median, color = 'blue'))
+             mapping = aes(x = quality, y = median_density, color = 'Median Density'))
 
 ```
 
@@ -455,18 +458,6 @@ ggpairs(subset(QR, select =  c(fixed.acidity,
 
 cor.test(QR$quality, QR$residual.sugar)
 
-## Plam : pick top correllatted variable with quality, chart them out and creat heat maps of top quality winages.
-
-as.list(colnames(QR))
-
-length( QR$"chlorides")
-length(QR$quality)
-QR.corr
-
-QR$"X"
-
-thing <- `colnames<-`(QR, "X")
-
 ```
 
 From the plotted variable some positive correlation between sulphates and citric acid can be seen.
@@ -704,9 +695,10 @@ ggplot(data = QR.sub, aes(x = quality, y = citric.acid, color = volatile.acidity
 lm1 <- lm(quality ~ I(-volatile.acidity), data = QR.sub)
 lm2 <- update(lm1, ~ . + I(-citric.acid))
 lm3 <- update(lm2, ~ . + sulphates)
+lm4 <- update(lm3, ~ . + I(-density))
 summary(lm3)
 anova(lm3)
-mtable(lm1,lm2,lm3, sdigits = 2)
+mtable(lm1,lm2,lm3,lm4, sdigits = 2)
 
 
 
@@ -751,6 +743,23 @@ The results show this is a somewhat weak model with low R squared value 0.22 for
 ### Plot Two
 ```{r echo=FALSE, Plot_Two}
 
+ggplot(data = QR, aes(x = quality, y = volatile.acidity)) +
+  geom_point(alpha = 0.3, position = 'jitter') +
+  geom_line(data = QR.means, lineend = 'round', 
+            aes(x = quality, y = volatile.acidity, color = 'Mean'), 
+            size = 1.5) +
+  geom_line(data = QR.median, lineend = 'round', 
+            aes(x = quality, y = volatile.acidity, 
+                color = 'Median'), size = 1.5)
+
+cor.test(QR$quality, QR$volatile.acidity)
+
+#T test of volatile acidity means for quality buckets 7 and 8.
+x = subset(QR, quality = 7)$volatile.acidity
+y = subset(QR, quality = 8)$volatile.acidity
+t.test(x, y)
+
+
 ```
 
 ### Description Two
@@ -758,6 +767,7 @@ The results show this is a somewhat weak model with low R squared value 0.22 for
 
 ### Plot Three
 ```{r echo=FALSE, Plot_Three}
+QR$quality <- as.factor(QR$quality)
 ggplot(data = QR, aes(x = volatile.acidity, y = citric.acid, color = quality)) +
   geom_point(alpha = 0.4, size = 3) +
   scale_color_brewer(type = 'seq', palette = 13,
