@@ -15,7 +15,8 @@ library(ggplot2)
 library(GGally)
 library(dplyr)
 library(tidyr)
-library(plotly)
+library(stats)
+library(memisc)
 
 #single line to check if my git hub is syncing properly
 ```
@@ -649,13 +650,7 @@ As mentioned above the strongest relationship was the negative impact of volatil
 
 ```{r echo=FALSE, Multivariate_Plots}
 
-#plot_ly(z = ~volcano, type = "contour")
-
-QR.heat <- subset(QR, select = c('quality', 'volatile.acidity', 'sulphates'))
-ggplot(data = QR.heat, 
-       aes(x =  volatile.acidity, y =  sulphates, z = quality)) +
-  geom_contour()
-
+#Quality as a factor needed for analysis below:
 QR$quality <- as.factor(QR$quality)
 
 ggplot(data = QR, aes(x = volatile.acidity, y = citric.acid, color = quality)) +
@@ -664,6 +659,7 @@ ggplot(data = QR, aes(x = volatile.acidity, y = citric.acid, color = quality)) +
   xlim(0.1,1.2) +
   ylim(0,0.8)
 
+cor.test(QR$volatile.acidity, QR$citric.acid)
 
 ggplot(data = QR, aes(x = volatile.acidity, y = sulphates, color = quality)) +
   geom_point(alpha = 0.4, size = 3) +
@@ -671,6 +667,7 @@ ggplot(data = QR, aes(x = volatile.acidity, y = sulphates, color = quality)) +
   xlim(0.1,1.2) +
   ylim(0.4,1.3)
 
+cor.test(QR$volatile.acidity, QR$sulphates)
 
 ggplot(data = QR, aes(x = citric.acid, y = sulphates, color = quality)) +
   geom_point(alpha = 0.4, size = 3) +
@@ -678,20 +675,66 @@ ggplot(data = QR, aes(x = citric.acid, y = sulphates, color = quality)) +
   xlim(0,0.8) +
   ylim(0.4,1.3)
 
+
+#Quality back to numeric so other plots still work:
+QR$quality <- as.numeric(QR$quality)
+
 ```
 
+Though not wholly successful the plan here was to was to map out areas of highest quality over the variable of highest impact on wine quality. Though the relationships explored in the previous section between were linear, it was clear that for high and low quality wines these relationships oftemn broke down. The aim of the previous plots was to see if high or low quality wines cluster in certain intersections of two variables.
 
-```{r echo=FALSE, Multivariate_Plots}
+
+```{r echo=FALSE, More_plots_LM}
+
+QR.sub <- subset(QR, volatile.acidity < 1.2 & sulphates < 1 & citric.acid != 0)
+
+ggplot(data = QR.sub, aes(x = quality, y = volatile.acidity, color = citric.acid)) +
+  geom_point(position = 'jitter', alpha = 0.3) 
+
+ggplot(data = QR.sub, aes(x = quality, y = volatile.acidity, color = sulphates)) +
+  geom_point(position = 'jitter', alpha = 0.3)
+
+ggplot(data = QR.sub, aes(x = quality, y = sulphates, color = citric.acid)) +
+  geom_point(position = 'jitter', alpha = 0.3)
+
+ggplot(data = QR.sub, aes(x = quality, y = citric.acid, color = volatile.acidity)) +
+  geom_point(position = 'jitter', alpha = 0.3)
+
+
+lm1 <- lm(quality ~ I(-volatile.acidity), data = QR.sub)
+lm2 <- update(lm1, ~ . + I(-citric.acid))
+lm3 <- update(lm2, ~ . + sulphates)
+summary(lm3)
+anova(lm3)
+mtable(lm1,lm2,lm3, sdigits = 2)
+
+
 
 ```
+
+Plots generated to look for potential models. Linear model generated but of very limited fit.
 
 # Multivariate Analysis
 
 ### Talk about some of the relationships you observed in this part of the investigation. Were there features that strengthened each other in terms of looking at your feature(s) of interest?
 
+For citric acid and volatile acidity its clear the majority of highest quality wines are of both high citirc acid and low volatile acidity. The high quality wines that are not of low volatile acidicity are of low citric acid though this may just be a consequence of the clear inverse linear relationship between citric acid and volatile acidity. A correlation test confirms this relation with a R value of -0.55.
+
+Looking a sulphates versus volatile acidity the high quality wines the highest quality wines are most promenent in the regeion of low volatile acidity and high sulphates content. The seperation between high and low quality wines can be seen clearly with the majority of low and mid quality wines clustering in the area of higher volatile acidity and lower sulphate content.
+In this case there is again an inverse linear relationship visible between the sulphate and volatile acidity content and a Pearsons R value of -0.26 confirms this less clear correlation. 
+
+Finally for sulphates versus citric acid the highest quality wines cluster in the area of high sulphate content. The seperation by sulphate content is clearer cut than citirc acid with some higher quality wines visible for lower citric acid but a much lower population of high quality wines in the low sulphates region (though with a tighter distribution of values). In this case there is no strong relationship between the variables.
+
+
+
 ### Were there any interesting or surprising interactions between features?
 
+As detailed above there was an inverse relationship between citric acid and volatile acidity that was not expected. Its not clear why one measure of acidity would negatively effect another and this analysis was not aimed at finding one. There was also a weaker correlation between sulphates and volatile acidity that was not expected though the effect is not as clear. 
+
 ### OPTIONAL: Did you create any models with your dataset? Discuss the strengths and limitations of your model.
+
+An attempt was made to generate a linear model for wine quality using the volatile acidity, citric acid and sulphate content of the wines. A subset of the dataset was used to exclude outliers and simplify the model.
+The results show this is a somewhat weak model with low R squared value 0.22 for the completed model. This model could serve as a basic starting point for generating a more complex model of red wine quality but could not be relied upon to accuratly predict wine quality based on the variables examined.
 
 ------
 
@@ -715,7 +758,14 @@ ggplot(data = QR, aes(x = citric.acid, y = sulphates, color = quality)) +
 
 ### Plot Three
 ```{r echo=FALSE, Plot_Three}
-
+ggplot(data = QR, aes(x = volatile.acidity, y = citric.acid, color = quality)) +
+  geom_point(alpha = 0.4, size = 3) +
+  scale_color_brewer(type = 'seq', palette = 13,
+                     guide = guide_legend(title = 'Quality', 
+                                          reverse = TRUE, 
+                                          override.aes = list(alpha = 1, size = 4))) +
+  xlim(0.1,1.2) +
+  ylim(0,0.8)
 ```
 
 ### Description Three
