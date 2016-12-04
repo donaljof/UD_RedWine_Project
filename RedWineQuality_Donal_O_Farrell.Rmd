@@ -3,7 +3,7 @@ output: html_document
 ---
 ##Red Wine Quality Dataset Analysis With R 
 #####(Udacity Data Analsysis Nanodegree)
-####Donal O Farrell
+Donal O Farrell
 ========================================================
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
@@ -86,7 +86,7 @@ From the plot of quality above it can be seen that most red wines are of quality
 
 ```{r echo=FALSE, Univariate_Plots - X}
 #Q1 What is X?
-ggplot(data = QR, aes(x = QX)) +
+ggplot(data = QR, aes(x = X)) +
   geom_histogram(binwidth = 1)
 #Appears to be just an index
 range(QR$X)
@@ -117,7 +117,7 @@ The distribution for pH appears normal, centered around a mean of 3.31 as discus
 Faceting by quality doesn not yield any obvious changes to the distribution.
 There is mean and median difference between the best and worst quality wines though it is unlear at this stage if this is sigificant. 
 
-```{r echo=FALSE, warning=FALSE, Univariate_Plots_Residual_Sugar}
+```{r echo=FALSE, warning=FALSE, Univariate_Plots_Residual_Sugar_1}
 summary(QR$residual.sugar)
 
 #residual sugar distribution
@@ -135,7 +135,7 @@ ggplot(data = QR, aes(x = residual.sugar)) +
   geom_histogram(binwidth = 0.01) +
   scale_x_sqrt(limits = c(1,4), breaks = seq(1,4, 0.2))
 
-QR$Sweetness <- cut(residual.sugar, 
+QR$Sweetness <- cut(QR$residual.sugar, 
                     breaks = c(0,1,3,5,7,16),
                     labels = c("Dry", "Off Dry","Sweet", "Port", "Dessert"))
   
@@ -205,7 +205,7 @@ Density.median <- QR %>% group_by(quality) %>%
   summarise(median_density = median(density))
 
 #Plot below does not yield useful information as changig y axis limits removes the bars completley.
-ggplot(data = Density.mean, mapping = aes(x = quality, y = avg)) +
+ggplot(data = Density.mean, mapping = aes(x = quality, y = avg_density)) +
   geom_bar(stat = 'identity')
 
 ggplot() +
@@ -666,6 +666,14 @@ ggplot(data = QR, aes(x = citric.acid, y = sulphates, color = quality)) +
   xlim(0,0.8) +
   ylim(0.4,1.3)
 
+ggplot(data = QR, aes(x = density, y = residual.sugar, color = quality)) +
+  geom_point(alpha = 0.4, size = 3) +
+  scale_colour_brewer(palette = "YlGnBu") 
+
+
+ggplot(data = QR, aes(x = density, y = alcohol, color = quality)) +
+  geom_point(alpha = 0.4, size = 3) +
+  scale_colour_brewer(palette = "YlGnBu") 
 
 #Quality back to numeric so other plots still work:
 QR$quality <- as.numeric(QR$quality)
@@ -690,6 +698,10 @@ ggplot(data = QR.sub, aes(x = quality, y = sulphates, color = citric.acid)) +
 
 ggplot(data = QR.sub, aes(x = quality, y = citric.acid, color = volatile.acidity)) +
   geom_point(position = 'jitter', alpha = 0.3)
+
+ggplot(data = QR.sub, aes(x = quality, y = density, color = volatile.acidity)) +
+  geom_point(position = 'jitter', alpha = 0.3)
+
 
 
 lm1 <- lm(quality ~ I(-volatile.acidity), data = QR.sub)
@@ -735,10 +747,23 @@ The results show this is a somewhat weak model with low R squared value 0.22 for
 ### Plot One
 ```{r echo=FALSE, Plot_One}
 
+ggplot(data = QR, aes(x = quality, y = citric.acid)) +
+  geom_boxplot(aes(group = quality)) +
+  geom_point(position = 'jitter', alpha = 0.2) +
+  geom_line(data = QR.median, size = 2, lineend = 'round',
+            aes(x = quality, y = citric.acid, color = 'median')) +
+  annotate("text", x = 5.5, y = 0.9, size = 8, color = 'red',
+           label = paste('R = ', cor(x = QR$quality, 
+                                     y = QR$citric.acid))) +
+  ggtitle("Red Wine Citric Acid Vs Quality Value")
+
+
+
 ```
 
 ### Description One
 
+The graph above shows the impact of citric acid content on the quality of red wines, with increasing median citric acid content evident with increasing quality value. Displayed above is the Pearsons R value for citric acid content versus quality value indicating a small positive correllation between citric acid and teh quality of red wine.
 
 ### Plot Two
 ```{r echo=FALSE, Plot_Two}
@@ -750,36 +775,47 @@ ggplot(data = QR, aes(x = quality, y = volatile.acidity)) +
             size = 1.5) +
   geom_line(data = QR.median, lineend = 'round', 
             aes(x = quality, y = volatile.acidity, 
-                color = 'Median'), size = 1.5)
-
-cor.test(QR$quality, QR$volatile.acidity)
-
-#T test of volatile acidity means for quality buckets 7 and 8.
-x = subset(QR, quality = 7)$volatile.acidity
-y = subset(QR, quality = 8)$volatile.acidity
-t.test(x, y)
-
+                color = 'Median'), size = 1.5) +
+  annotate("text", x = 5.5, y = 1.4, size = 8, color = 'red',
+           label = paste('R = ', cor(x = QR$quality, 
+                                     y = QR$volatile.acidity))) +
+  ggtitle("Red Wine Volatile Acidity Vs Quality Value")
 
 ```
 
 ### Description Two
 
+Ths chart shows the relationship between volatile acidity and the quality of red wines with the value for Pearsons R displayed above. The negative impact on quality is clear from both the negative R value and the clear trend in mean and median citric acid content.
 
 ### Plot Three
 ```{r echo=FALSE, Plot_Three}
+
 QR$quality <- as.factor(QR$quality)
+
 ggplot(data = QR, aes(x = volatile.acidity, y = citric.acid, color = quality)) +
-  geom_point(alpha = 0.4, size = 3) +
+  geom_point(alpha = 0.3, size = 4) +
   scale_color_brewer(type = 'seq', palette = 13,
                      guide = guide_legend(title = 'Quality', 
                                           reverse = TRUE, 
                                           override.aes = list(alpha = 1, size = 4))) +
-  xlim(0.1,1.2) +
-  ylim(0,0.8)
+  xlim(0.1,1) + ylim(0,0.8) +
+  ggtitle("Map of Quality Over Citric Acid and Volatile Acidity")
+
+
 ```
 
 ### Description Three
 
+This plot maps out the areas of highest quality red wines over the two variables that most influence red wine quality. From this plot it can be seen that the highest quality red wines are clustered in the area of high citric acid and volatile acidity. 
+
 ------
 
 # Reflection
+
+The red wines data set contains a lot of interesting information on red wines and their chemical properties. Though there are multiple interesting relationships between these chemical indicators the most intersting question that could be asked of this data is how these physical attributes play into making a wine of high or low quality. A strong negative relationship between volatile acidity and quality was observed and a linear model based on this and other correlated variables created (though with limited predictive power).
+
+Getting a clear picture of what determines quality in red wines from this data set has proved challenging for several reasons. Firstly the vast majority of the wines fall into the two centermost quality values of 5 and 6. As a result many factors that influence wine quality break down at either end of the scale and making robust models of wine quality are hampered by this thight distribution. An associated issue with this analysis has been the low number of unique values for quality, this limits the granularity of the analysis though treating the quality variable as a factor can be used to complete analysis not posible on more continous variables.
+The dataset does not include any measure of wine price, this would greatly increase the number of interesting questions that could be asked.
+Within each quality grouping there is a high degree of overlap for the values of each of the other associated variables that makes it hard to discern clear patterns of their impact to quality.
+
+For next steps the linear model could be expanded to include other variables of lesser correllation with quality or redesigned completly. A simples but possible more informative way of comparing what a good vs a bad quality wines attributes are may be to bucket wines of quality 2-5 and 6-8 into two groups and compare their summary statistics to find out what makes the high quality group different to the low quality group. Ther may also be a way to combine multiple chemical properties of the wine into a single variable with greater predictive power on wine quality. Some attempts at this were made above but with no success.
