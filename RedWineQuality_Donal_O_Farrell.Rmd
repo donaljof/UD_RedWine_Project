@@ -20,29 +20,31 @@ library(dplyr)
 library(tidyr)
 library(stats)
 library(memisc)
+library(grid)
+library(gridExtra)
 
 #single line to check if my git hub is syncing properly
 ```
 ####Loading Data Set and Initial Analysis
 
-The dataset chosent for this project was the Red Wine Quality data provided from Udacity and loaded as a CSV file.
+The data-set chosen for this project was the Red Wine Quality data provided from Udacity and loaded as a CSV file.
 
-The parameter X appears to be simply an index and there is no indication that it is ordered in any way, presumably this is to ensure a unique identifier for wines with the same charicteristics.
+The parameter X appears to be simply an index and there is no indication that it is ordered in any way, presumably this is to ensure a unique identifier for wines with the same characteristics.
 
-There are multipe measures of acidity expressed and other chemical attributes expressed as float numbers. From the summary statistics, some initial observations about the typical attributes of red wine can be made: 
+There are multiple measures of acidity expressed and other chemical attributes expressed as float numbers. From the summary statistics, some initial observations about the typical attributes of red wine can be made: 
 
-Red wine is acidic, with a mean pH of 3.11, closely matched to is median and with a short, symetric IQR. This indicates a tight, well behaved (likely normal) distribution around the mean pH.
+Red wine is acidic, with a mean pH of 3.11, closely matched to is median and with a short, symmetric IQR. This indicates a tight, well behaved (likely normal) distribution around the mean pH.
 
-There are no indications of the units used for the chemical constituents, probably ppm for chlorides / sulfides / sulphates though the residual sugars may be expressed as a percentage just as alchohol is.
+There are no indications of the units used for the chemical constituents, probably ppm for chlorides / sulfides / sulphates though the residual sugars may be expressed as a percentage just as alcohol is.
 
-The summary stats of the residual sugars indicate the presence of a long tail or at least outliers on the upper end of the distributon due to the higher mean and very high max value relative to the median and the quartile positions. This may be as a result of desert wines included in the data set.
+The summary stats of the residual sugars indicate the presence of a long tail or at least outliers on the upper end of the distribution due to the higher mean and very high max value relative to the median and the quartile positions. This may be as a result of desert wines included in the data set.
 
-Similar properties can be seen in the summary stats of alcohol percentage though the max value is far less extreme suggesting a assymetric distribution more strongly than the presence of outliers.
+Similar properties can be seen in the summary stats of alcohol percentage though the max value is far less extreme suggesting a asymmetric distribution more strongly than the presence of outliers.
 
-Finally the quality parameter is a integer value that looks to be one of the keys variable of interest. It is a interger value ranging from 3 to 8, with a mean close to the cntral value of 5.6. The median is missmatched to the mean but its not clear if this is a symtom of the discrete nature of the variable.
+Finally the quality parameter is a integer value that looks to be one of the keys variable of interest. It is a integer value ranging from 3 to 8, with a mean close to the central value of 5.6. The median is mismatched to the mean but its not clear if this is a symptom of the discrete nature of the variable.
 
 
-```{r echo=FALSE, Load_the_Data}
+```{r echo=FALSE,message=FALSE, warning=FALSE, Load_the_Data}
 # Load the Data
 #setwd("C:/Users/Donal/Documents/Udacity Docs/Data Analysis with R/Wine Project")
 setwd("C:/Users/donaljof/Documents/udacity docs/Data Analysis with R/UD_RedWine_Project")
@@ -74,7 +76,7 @@ Quantile_ratio_alcohol
 
 
 
-```{r echo=FALSE, Univariate_Plots_Quality}
+```{r echo=FALSE,message=FALSE, warning=FALSE, Univariate_Plots_Quality}
 #Quality distrbution
 ggplot(data = QR, aes(x = quality)) +
   geom_histogram(binwidth = 0.5) +
@@ -84,7 +86,7 @@ ggplot(data = QR, aes(x = quality)) +
 From the plot of quality above it can be seen that most red wines are of quality value 5 or 6.
 
 
-```{r echo=FALSE, Univariate_Plots - X}
+```{r echo=FALSE,message=FALSE, warning=FALSE, Univariate_Plots - X}
 #Q1 What is X?
 ggplot(data = QR, aes(x = X)) +
   geom_histogram(binwidth = 1)
@@ -93,7 +95,7 @@ range(QR$X)
 ```
 An initial question concerned the nature of the variable "x", above is just confirming this is an index.
 
-```{r echo=FALSE, Univariate_Plots_pH}
+```{r echo=FALSE,message=FALSE, warning=FALSE, Univariate_Plots_pH}
 #pH histogram 
 ggplot(data = QR, aes(x = pH)) +
   geom_histogram(binwidth = 0.01)
@@ -114,10 +116,10 @@ QR %>% group_by(quality) %>% summarise(median = median(pH))
 ```
 The distribution for pH appears normal, centered around a mean of 3.31 as discussed above.
 
-Faceting by quality doesn not yield any obvious changes to the distribution.
-There is mean and median difference between the best and worst quality wines though it is unlear at this stage if this is sigificant. 
+Faceting by quality doesn't not yield any obvious changes to the distribution.
+There is mean and median difference between the best and worst quality wines though it is unclear at this stage if this is significant. 
 
-```{r echo=FALSE, warning=FALSE, Univariate_Plots_Residual_Sugar_1}
+```{r echo=FALSE, message=FALSE, warning=FALSE, Univariate_Plots_Residual_Sugar_1}
 summary(QR$residual.sugar)
 
 #residual sugar distribution
@@ -148,16 +150,16 @@ ggplot(data = subset(QR, Sweetness == "Off Dry"), aes(x = residual.sugar)) +
 
 ```
 
-Residual sugars has a roughly normal distribution but with a subststantial tial in the hight end of the dist. Applying a square root scale looks to contract the values for a more normal curve.
+Residual sugars has a roughly normal distribution but with a substantial tail in the high end of the dist. Applying a square root scale looks to contract the values for a more normal curve.
 
-Its not at all clear what unit this variable uses, some quick googling typically give residual sugar units in g/L but with typicall values of 2-20 g/L this does not fit the data distribution. It appears residual sugar here is expressed as a percentage (wt % most likely) with values ranging from the driest reds at 0.9 % to dessert wines at 15%.
+Its not at all clear what unit this variable uses, some quick goggling typically give residual sugar units in g/L but with typical values of 2-20 g/L this does not fit the data distribution. It appears residual sugar here is expressed as a percentage (wt % most likely) with values ranging from the driest reds at 0.9 % to dessert wines at 15%.
 
-Creating a category for wine types based on sweetness might be appropriate her for seperatig different styles in future analysis, a basic categorization was found below and modifed for this data set (this is a bit crude and Dry wines are looking suspiciously sparse but will at least be usefull to subset out the outliers).
+Creating a category for wine types based on sweetness might be appropriate her for separating different styles in future analysis, a basic categorization was found below and modified for this data set (this is a bit crude and Dry wines are looking suspiciously sparse but will at least be useful to subset out the outliers).
 
 Source of residual sugars information: https://www.winecurmudgeon.com/residual-sugar-in-wine-with-charts-and-graphs/
 
 
-```{r echo=FALSE,warning=FALSE, Univariate_Plots_Alchohol}
+```{r echo=FALSE,message=FALSE, warning=FALSE, Univariate_Plots_Alchohol}
 #Alchohol histrogram
 
 ggplot(data = QR, aes(x = alcohol)) +
@@ -185,11 +187,11 @@ ggplot(data = QR, aes(x = alcohol)) +
 
 ```
 
-The distribution of alchohol content of the wines follow an unusual distribution with limited wines below 9 % volume and then a verly long fat tail up to about 13 %.
-Applying several scales to this histrogram failled to provide any new insights nor did breaking the histograms out by quality bin.
-The peak at 9.5 % is most apparent in Q = 5 wines. Its possible that this distribution reflects the most popular styles of mid range wines and gives more information about trends wine consumtion rather than quality.
+The distribution of alcohol content of the wines follow an unusual distribution with limited wines below 9 % volume and then a very long fat tail up to about 13 %.
+Applying several scales to this histogram failed to provide any new insights nor did breaking the histograms out by quality bin.
+The peak at 9.5 % is most apparent in Q = 5 wines. Its possible that this distribution reflects the most popular styles of mid range wines and gives more information about trends wine consumption rather than quality.
 
-```{r echo=FALSE,warning=FALSE, Univariate_Plots_Density}
+```{r echo=FALSE,warning=FALSE, message= FALSE, Univariate_Plots_Density}
 #Density histrogram
 ggplot(data = QR, aes(x = density)) +
   geom_histogram(binwidth = 0.0001)
@@ -216,10 +218,10 @@ ggplot() +
 
 ```
 
-Density appears normally distributed though splitting by quality seems to produce two slightly skewed distribution sfor the most populated wine qualities (5 and 6).
-Breaking the mean and median denstities out by quality appears to show an overall downward trend in densty for increasing quality.
+Density appears normally distributed though splitting by quality seems to produce two slightly skewed distribution for the most populated wine qualities (5 and 6).
+Breaking the mean and median densities out by quality appears to show an overall downward trend in density for increasing quality.
 
-```{r echo=FALSE,warning=FALSE, Univariate_Plots_Acidity}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Univariate_Plots_Acidity}
 
 #acidity
 summary(QR$fixed.acidity)
@@ -248,13 +250,13 @@ QR.vinegar
 
 Fixed acidity has a long tail for higher acidity and applying new scales doesn't seem to resolve this.
 
-Volitile acidity is also complex with a possible bimodality hidden in the distribution and a long tail for higher acidity. Breaking the distributions out by quality the binodality becomes slightly more pronounced.
+Volatile acidity is also complex with a possible bimodality hidden in the distribution and a long tail for higher acidity. Breaking the distributions out by quality the bimodality becomes slightly more pronounced.
 
 Information found online (http://waterhouse.ucdavis.edu/whats-in-wine/volatile-acidity) sugggests volitle acidity as a measure of wine spoilage as it largely corresponds to acetic acid levels in the wine. The mean volatile acidity for the lowest quality of wines is higher than that of better quality wines but this relation breaks down for the higher quality wines.
 
-Interstingly there are wines in the data set with volatile acidity beyond the US legal limit listed
+Interestingly there are wines in the data set with volatile acidity beyond the US legal limit listed
 
-```{r echo=FALSE,warning=FALSE, Univariate_Plots_Citric_Acid}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Univariate_Plots_Citric_Acid}
 
 #citric acid, pretty flat with lots of 0s
 ggplot(data = QR, aes(x = QR$citric.acid)) +
@@ -283,10 +285,10 @@ ggplot(data = QR,aes(x = quality)) +
 
 ```
 
-The citric acid content is pretty flat (~8%) with high volume of 0's and another spike at 0.5. Seperating out the zero results shows there is no citric acid present in the highest quality bucket 
+The citric acid content is pretty flat (~8%) with high volume of 0's and another spike at 0.5. Separating out the zero results shows there is no citric acid present in the highest quality bucket 
 
 
-```{r echo=FALSE,warning=FALSE, Univariate_Plots_Chlorides}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Univariate_Plots_Chlorides}
 #chlorides, normal with lots of outliers
 ggplot(data = QR, aes(x = QR$chlorides)) +
   geom_histogram(binwidth = 0.001)
@@ -316,15 +318,15 @@ glimpse(HC.delta)
 
 ```
 
-The cholrides content looks to have a normal distribution near the bottom of the scale but this is obscured by a very long tail of outliers. Shrinking the limits gives a more normal distribution centred aroun a mean of ~ 0.08.
+The chlorides content looks to have a normal distribution near the bottom of the scale but this is obscured by a very long tail of outliers. Shrinking the limits gives a more normal distribution centered around a mean of ~ 0.08.
 
-It would be interesting to know what the properties of the high chloride outliers that can be seen are and if there are any clues as to what causes such high chloride contenct.
+It would be interesting to know what the properties of the high chloride outliers that can be seen are and if there are any clues as to what causes such high chloride content.
 
-The table HC.delta gives the difference between the standardized mean properties of the high chloride wines and the origional complete data set. Standardization was completed to make the deltas comparable across all the parameters though it runs the risk of obscuring in the scale of some deltas where stDev is disporportunatly high due to outliers.
+The table HC.delta gives the difference between the standardized mean properties of the high chloride wines and the original complete data set. Standardization was completed to make the deltas comparable across all the parameters though it runs the risk of obscuring in the scale of some deltas where stDev is disproportionately high due to outliers.
 
-From the table generated it can be seen that the high chloride wines are also generally high in sulphates. They also appear higher citric acid, residual sugars and denstiy, and lower in pH, alchohol and quality. A statistical test such as a t-test would be useful to furhter investigate the significance of these differences if needed.
+From the table generated it can be seen that the high chloride wines are also generally high in sulphates. They also appear higher citric acid, residual sugars and density, and lower in pH, alcohol and quality. A statistical test such as a t-test would be useful to further investigate the significance of these differences if needed.
 
-```{r echo=FALSE,warning=FALSE, Univariate_Plots_Sulfur_Dioxide}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Univariate_Plots_Sulfur_Dioxide}
 #sulfur dioxide
 ggplot(data = QR, aes(x = QR$free.sulfur.dioxide)) +
   geom_histogram(binwidth = 1)
@@ -365,11 +367,11 @@ ggplot(data = QR, aes(x = QR$nonfree.sulfur.dioxide)) +
 ```
 
 There are two measures of sulfur dioxide in the data set, free and total. Both appear to have extremely long tailed distributions but applying a log10 scale to the plots created a more normal distribution.
-Facet wrap of the totlal sulfur dioxide shows no major shifts in the distribution though  a slight hint of bimodality can be seen for quality = 6.
+Facet wrap of the total sulfur dioxide shows no major shifts in the distribution though  a slight hint of bimodality can be seen for quality = 6.
 
-Assuming the free suflur dioxide is a subset of the total, a new variable for the non-free sulfur dioxided was created to investigate if there us anything of interest in the residual of the two variables. The non-free distribution is a similar distribution to the other measures of suflur dioxide, with a log scale giving a more normal distribution.
+Assuming the free sulfur dioxide is a subset of the total, a new variable for the non-free sulfur dioxide was created to investigate if there us anything of interest in the residual of the two variables. The non-free distribution is a similar distribution to the other measures of sulfur dioxide, with a log scale giving a more normal distribution.
 
-```{r echo=FALSE,warning=FALSE, Univariate_Plots_Sulphates}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Univariate_Plots_Sulphates}
 #sulphates
 ggplot(data = QR, aes(x = QR$sulphates)) +
   geom_histogram(binwidth = 0.01)
@@ -381,24 +383,24 @@ ggplot(data = QR, aes(x = QR$sulphates)) +
 
 #try log10 scales
 ggplot(data = QR, aes(x = QR$sulphates)) +
-  geom_histogram(bins = 100) +
+  geom_histogram(bins = 50) +
   scale_x_log10(limits = c(0.35,1))
 
 #sqrt not as good
 ggplot(data = QR, aes(x = QR$sulphates)) +
-  geom_histogram(bins = 100) +
+  geom_histogram(bins = 50) +
   scale_x_sqrt(limits = c(0.35,1))
 
 ggplot(data = QR, aes(x = QR$sulphates, fill = quality)) +
-  geom_histogram(bins = 100) +
+  geom_histogram(bins = 50) +
   scale_x_log10(limits = c(0.35,1)) +
   facet_wrap(~quality)
 
 ```
 
-The sulfate is another long tailled distribution where applying a log10 scale leads a far more normal looking plot. Applying a square root also helps but is less effective. Faceting over quality shows no major differences between the distributions for difference for different quality levels.
+The sulfate is another long tallied distribution where applying a log10 scale leads a far more normal looking plot. Applying a square root also helps but is less effective. Faceting over quality shows no major differences between the distributions for difference for different quality levels.
 
-```{r echo=FALSE,warning=FALSE, Univariate_Plots_Total_Additives}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Univariate_Plots_Total_Additives}
 
 QR$Total.additives <- QR$sulphates + QR$chlorides
 
@@ -415,34 +417,34 @@ ggplot(data = QR, aes(x = Total.additives)) +
 
 ```
 
-Finnally, due to the similarity in distributions and the hint of connections between the variables, a new variale was created ('Total.additives') that is the simple sum of sulphates and chlorides.
+Finally, due to the similarity in distributions and the hint of connections between the variables, a new variable was created ('Total.additives') that is the simple sum of sulphates and chlorides.
 
 # Univariate Analysis
 
 ### What is the structure of your dataset?
 
-The data set consists of 14 variables related to the chemical properties of red wines. Except fot an index (X) and quality that are expressed as integers, all the parameters are expresse as floats numbers.
+The data set consists of 14 variables related to the chemical properties of red wines. Except for an index (X) and quality that are expressed as integers, all the parameters are express as floats numbers.
 
 ### What is/are the main feature(s) of interest in your dataset?
 
-The main feature of the dataset is the assigned quality of the wines, a key question of this investigation will be to see how the other properties of the wines influence this quality factor. 
+The main feature of the data-set is the assigned quality of the wines, a key question of this investigation will be to see how the other properties of the wines influence this quality factor. 
 
 ### What other features in the dataset do you think will help support your investigation into your feature(s) of interest?
 
-Other important features are the residual sugar, alchohol and ph variable as these are likely to have th biggest impact on the properties of the wine.
+Other important features are the residual sugar, alcohol and pH variable as these are likely to have the biggest impact on the properties of the wine.
 
 ### Did you create any new variables from existing variables in the dataset?
 
-New variables nonfree.sulfur.dioxide and Total.additives were created.
+New variables non-free.sulfur.dioxide and Total.additives were created.
 
 ### Of the features you investigated, were there any unusual distributions? Did you perform any operations on the data to tidy, adjust, or change the form of the data? If so, why did you do this?
 
-Several variables (suphides and sulfur dioxide) appear to be log10 disributed and residual sugars appears square root distributed.
+Several variables (suphides and sulfur dioxide) appear to be log10 distributed and residual sugars appears square root distributed.
 
-No changes were made to ajust the data at this stage. It may be useful to change the quality data to a factor, but so far this has not been done for ease of plotting.
+No changes were made to adjust the data at this stage. It may be useful to change the quality data to a factor, but so far this has not been done for ease of plotting.
 
 # Bivariate Plots Section
-```{r echo=FALSE, Bivariate_Plots_ggpairs}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Bivariate_Plots_ggpairs}
 #variables mostlikely to affect quality
 ggpairs(subset(QR, select =  c(quality, residual.sugar,sulphates, pH, citric.acid)))
 
@@ -455,40 +457,48 @@ ggpairs(subset(QR, select =  c(quality, fixed.acidity, volatile.acidity,
 ggpairs(subset(QR, select =  c(fixed.acidity, 
                                    volatile.acidity,pH, citric.acid)))
 
-
-cor.test(QR$quality, QR$residual.sugar)
-
+#Nice ggally feature, will use again!
+ggcorr(QR)
 ```
 
 From the plotted variable some positive correlation between sulphates and citric acid can be seen.
 
-A negative correlation between pH and citrica acid is seen, it is likely this is one of the several acidity indicators that contributes to pH. The negetive correlation makes sense as pH decreases with increasing acidity.
+A negative correlation between pH and citric acid is seen, it is likely this is one of the several acidity indicators that contributes to pH. The negative correlation makes sense as pH decreases with increasing acidity.
 
-The strongest correlation to quality form the second ggally matric is the negitive correllation to volatile acidity (-0.391) 
-Top 4 influencers of wine quality bucket are below. This correlation test only gives a measure of linear dependance so focusing on these variable may exclude any non linear relationships but this is beyond the scope of this first pass at the data set.
+The strongest correlation to quality form the second ggally matrix is the negative correlation to volatile acidity (-0.391) 
+Top 4 influencers of wine quality bucket are below. This correlation test only gives a measure of linear dependence so focusing on these variable may exclude any non linear relationships but this is beyond the scope of this first pass at the data set.
 sulpates = 0.251
 citric acid = 0.226
 volatile acidity = - 0.391
-total sulphur dioxided = -0.185
+total sulphur dioxide = -0.185
 
-Looking at the different measures of acidity there are clear relationships between some of the different measures of acidity. The strongest correlation is a negative correlatoon between pH and fixed acidity 
+Looking at the different measures of acidity there are clear relationships between some of the different measures of acidity. The strongest correlation is a negative correlation between pH and fixed acidity 
 
-There is a correlation between citric acid content and fixed acidity that suggests the possibility that these are not indedendant measures of acidity and the fixed acidity of a wine incorporates the impact of the citric acid content. 
+There is a correlation between citric acid content and fixed acidity that suggests the possibility that these are not independent measures of acidity and the fixed acidity of a wine incorporates the impact of the citric acid content. 
 
-```{r echo=FALSE, Bivariate_Plots_citricAcid}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Bivariate_Plots_citricAcid}
 
 ggplot(data = QR, aes(x = quality, y = citric.acid, group = quality)) +
-  geom_boxplot() +
-  geom_point(position = 'jitter', alpha = 0.3)
+  geom_boxplot(color = 'orange') +
+  geom_point(position = 'jitter', alpha = 0.2) +
+  stat_summary(fun.y = "mean", 
+               geom = "point", 
+               color = "red", 
+               shape = 8, 
+               size = 4) +
+  geom_smooth(inherit.aes = FALSE, aes(quality, 
+                    citric.acid),
+                method = "lm", 
+                se = FALSE, size = 1.5)
 
 cor(x = QR$quality, y = QR$citric.acid)
 
 #QR.CA_summary <- QR <%< ?what was the plan here?
 ```
 
-From the boxplot of citric acid by quality we can see the correllation between the citric acid content and quality. There is a slight increase in mean citric acid content betwen quality buckets 5 ad 6 but the big differences can be seen comparing the low quality buckets, with loww citric acid, and the hight quality buckets that show the reverse. 
+From the box plot of citric acid by quality we can see the correlation between the citric acid content and quality. There is a slight increase in mean citric acid content between quality buckets 5 ad 6 but the big differences can be seen comparing the low quality buckets, with low citric acid, and the high quality buckets that show the reverse. 
 
-```{r echo=FALSE, Bivariate_Plots_Residual_Sugar}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Bivariate_Plots_Residual_Sugar}
 
 ggplot(data = QR, aes(x = quality, y = residual.sugar, group = quality)) +
   geom_boxplot() +
@@ -500,27 +510,38 @@ ggplot(data = QR, aes(x = quality, y = residual.sugar, group = quality)) +
   ylim(1,6)
 
 ggplot(data = QR, aes(x = residual.sugar, y = density)) +
-  geom_point()
+  geom_point() +
+  geom_smooth(inherit.aes = FALSE, aes(residual.sugar, density),
+              method = "lm", se = FALSE, 
+              size = 1.5, color = 'red')
 
 ggplot(data = QR, aes(x = residual.sugar, y = density)) +
   geom_point(alpha = 0.2) +
   geom_smooth() +
-  scale_x_continuous(limits = c(1,4))
+  scale_x_continuous(limits = c(1,4)) +
+  geom_smooth(inherit.aes = FALSE, aes(residual.sugar, 
+                    density),
+                method = "lm", 
+                se = FALSE, size = 1.5, color = 'red')
+
 
 cor(x = QR$residual.sugar, y = QR$density)
 
 ggplot(data = QR, aes(x = residual.sugar, y = density)) +
   geom_point(alpha = 0.2) +
   scale_x_sqrt() +
+  geom_smooth(inherit.aes = FALSE, aes(residual.sugar, density),
+              method = "lm", se = FALSE, 
+              size = 1.5, color = 'red')
   ggtitle("density vs sqrt residual sugar")
 
 ```
 
-Looking at residual sugars across the levels of quality there appears to be no correllation between residual sugar and quality.
+Looking at residual sugars across the levels of quality there appears to be no correlation between residual sugar and quality.
 
-A scatter plot of residual sugar and density shows an influence of residual sugar on the density of the wine. This would be expected given the higher density of sugards relative to the other main constituents (water and alchohol) though this correlation breaks down for the sweetest wines.  
+A scatter plot of residual sugar and density shows an influence of residual sugar on the density of the wine. This would be expected given the higher density of sugars relative to the other main constituents (water and alcohol) though this correlation breaks down for the sweetest wines.  
 
-```{r echo=FALSE, Bivariate_Plots_Chlorides}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Bivariate_Plots_Chlorides}
 
 QR.means <- subset(QR, select = -Sweetness)  %>% group_by(quality) %>% summarise_each(funs(mean))
 
@@ -535,13 +556,16 @@ ggplot(data = QR, aes(x = quality, y = chlorides)) +
 ggplot(data = QR, aes(x = quality, y = chlorides)) +
   geom_point(position = 'jitter', alpha = 0.2) +
   geom_line(data = QR.means) +
-  scale_y_continuous(limits = c(0, 0.2))
+  scale_y_continuous(limits = c(0, 0.2)) +
+  geom_smooth(aes(quality, chlorides),
+              method = "lm", se = FALSE, 
+              size = 1.5, color = 'red')
 
 
 ggplot(data = QR, aes(x = quality, y = chlorides)) +
   geom_point(position = 'jitter', alpha = 0.2) +
-  geom_line(data = QR.means, aes(color = 'mean')) +
-  geom_line(data = QR.median, aes(color = 'median')) +
+  geom_line(data = QR.means, aes(color = 'mean'), size  = 2) +
+  geom_line(data = QR.median, aes(color = 'median'), size = 2) +
   scale_y_continuous(limits = c(0, 0.2))
 
 ```
@@ -549,7 +573,7 @@ ggplot(data = QR, aes(x = quality, y = chlorides)) +
 Chloride content looks static along the quality buckets.
 
 
-```{r echo=FALSE, Total_Sulphur_dioxide}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Total_Sulphur_dioxide}
 
 ggplot(data = QR, aes(x = quality, y = QR$total.sulfur.dioxide)) +
   geom_point(position = 'jitter', alpha = 0.1) +
@@ -561,12 +585,12 @@ cor.test(QR$quality, QR$total.sulfur.dioxide)
 
 ```
 
-From the trends in mean and median total sulfur dioxide over the different quality bins we can see there is not a clear linear negative correllation that the R value would suggest.
+From the trends in mean and median total sulfur dioxide over the different quality bins we can see there is not a clear linear negative correlation that the R value would suggest.
 
 The clearest differences can be seen in the populations of bins 5, 6 and 7. The upper distribution of sulfur dioxide is eroded away giving a smaller range of sulfur dioxide values as the quality increases (ignoring outliers). This trend cannot be seen for the very low or very high quality buckets due to the lower overall populations. Its possible that if the data set was expanded to include a far higher number of observations for the low/high end of the quality scale the ranges would follow the same pattern as 5/6/7.
 
 
-```{r echo=FALSE, Bivariate_Plots_Suphates}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Bivariate_Plots_Suphates}
 
 ggplot(data = QR, aes(x = quality, y = sulphates)) +
   geom_point(alpha = 0.3, position = 'jitter') +
@@ -575,15 +599,15 @@ ggplot(data = QR, aes(x = quality, y = sulphates)) +
             size = 1.5) +
   geom_line(data = QR.median, lineend = 'round', 
             aes(x = quality, y = sulphates, 
-                color = 'Median'), size = 1.5)
+                color = 'Median'), size = 1.5) 
 
 cor.test(QR$quality, QR$sulphates)
 
 ```
 
-The correllation between wine quality and sulphates appears more clear cut with a liner relationship between sulphates and quality evident in the bivariate plot above. The trends in mean/median hold most clearly for the highly populated quality buckets and the pattern falters for the highest/lowest quality wines. Again, a data set with a higher number of low/high quality wines might hold the linear relationship more closely. The value for Pearson's R (0.25) is in line with the observed positive linear dependance.
+The correlation between wine quality and sulphates appears more clear cut with a liner relationship between sulphates and quality evident in the bivariate plot above. The trends in mean/median hold most clearly for the highly populated quality buckets and the pattern falters for the highest/lowest quality wines. Again, a data set with a higher number of low/high quality wines might hold the linear relationship more closely. The value for Pearson's R (0.25) is in line with the observed positive linear dependence.
 
-```{r echo=FALSE, Bivariate_Plots_Volatile_Acidity}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Bivariate_Plots_Volatile_Acidity}
 
 ggplot(data = QR, aes(x = quality, y = volatile.acidity)) +
   geom_point(alpha = 0.3, position = 'jitter') +
@@ -611,14 +635,14 @@ ggplot(data = QR.highN, aes(x = volatile.acidity)) +
 
 ```
 
-The clearest linear correlation between quality and the other variables in the data set appears to be the negative relationship between quality and volatile acidity. This relationship is bourne out in both the large negative R value (-0.39) and the bivariate chart. Only for the highest quality wines does the relationship break down, either because of low population or because the difference between 7 and 8 quality wines is not expressed in volatile acidity.
-A t-test of the volatile acidity in quality values 7 and 8 indicates the means are matched within the 95% confidence interval. This statistical test might not be valid given the large difference in populations and the p value of 1 is highly suspicious. Despite this it doesn't seem unreasonable to conclude the means are matched. This would boost the arguement that there the volatile acidity stabalizes at 7 and there is no further reduction for higher quality wines.
+The clearest linear correlation between quality and the other variables in the data set appears to be the negative relationship between quality and volatile acidity. This relationship is borne out in both the large negative R value (-0.39) and the bivariate chart. Only for the highest quality wines does the relationship break down, either because of low population or because the difference between 7 and 8 quality wines is not expressed in volatile acidity.
+A t-test of the volatile acidity in quality values 7 and 8 indicates the means are matched within the 95% confidence interval. This statistical test might not be valid given the large difference in populations and the p value of 1 is highly suspicious. Despite this it doesn't seem unreasonable to conclude the means are matched. This would boost the argument that there the volatile acidity stabilizes at 7 and there is no further reduction for higher quality wines.
 
 # Bivariate Analysis
 
 ### Talk about some of the relationships you observed in this part of the investigation. How did the feature(s) of interest vary with other features in the dataset?
 
-There are clear relationships between some variables in the data set. Most striking is the negative relationship between wine quality and volatile acidity. With the exception of the highest quality wines there is a clear downward trend with increasing volatile acidity. This makes sense based the make-up of volatile acidity as composing mainly of acetic acid and other acids considered as spoilants that would negativly impact the flavour.
+There are clear relationships between some variables in the data set. Most striking is the negative relationship between wine quality and volatile acidity. With the exception of the highest quality wines there is a clear downward trend with increasing volatile acidity. This makes sense based the make-up of volatile acidity as composing mainly of acetic acid and other acids considered as spoilants that would negatively impact the flavor.
 
 Less important variables impacting quality include citric acid, sulphates and total sulfur dioxide. The relationships between these variables are less straightforward and break down for the lowest and highest quality buckets.
  
@@ -630,7 +654,7 @@ http://waterhouse.ucdavis.edu/whats-in-wine/volatile-acidity
 ### Did you observe any interesting relationships between the other features (not the main feature(s) of interest)?
 
 
-Other than looking at quality, we can see relationships between citric acid and pH that would be expected (pH being a measure of acidity). A linear relationship between residual sugars and density was also observed as would be expected given the large ,olecular weight of sugars.
+Other than looking at quality, we can see relationships between citric acid and pH that would be expected (pH being a measure of acidity). A linear relationship between residual sugars and density was also observed as would be expected given the large ,molecular weight of sugars.
 
 ### What was the strongest relationship you found?
 
@@ -639,95 +663,89 @@ As mentioned above the strongest relationship was the negative impact of volatil
 
 # Multivariate Plots Section
 
-```{r echo=FALSE, Multivariate_Plots}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Multivariate_Plots_1}
 
 #Quality as a factor needed for analysis below:
 QR$quality <- as.factor(QR$quality)
 
-ggplot(data = QR, aes(x = volatile.acidity, y = citric.acid, color = quality)) +
+p1 <- ggplot(data = QR, aes(x = volatile.acidity, y = citric.acid, color = quality)) +
   geom_point(alpha = 0.4, size = 3) +
   scale_colour_brewer(palette = "YlGnBu") +
   xlim(0.1,1.2) +
-  ylim(0,0.8)
+  ylim(0,0.8) +
+  geom_smooth(method = "lm", se = FALSE,size=1) 
+
+p2 <- ggplot(data = QR, aes(x = volatile.acidity, y = sulphates, color = quality)) +
+  geom_point(alpha = 0.4, size = 3) +
+  scale_colour_brewer(palette = "YlGnBu") +
+  xlim(0.1,1.2) +
+  ylim(0.4,1.3) +
+  geom_smooth(method = "lm", se = FALSE,size=1) 
+
+grid.arrange(p1,p2, ncol = 2)
 
 cor.test(QR$volatile.acidity, QR$citric.acid)
-
-ggplot(data = QR, aes(x = volatile.acidity, y = sulphates, color = quality)) +
-  geom_point(alpha = 0.4, size = 3) +
-  scale_colour_brewer(palette = "YlGnBu") +
-  xlim(0.1,1.2) +
-  ylim(0.4,1.3)
-
 cor.test(QR$volatile.acidity, QR$sulphates)
 
-ggplot(data = QR, aes(x = citric.acid, y = sulphates, color = quality)) +
-  geom_point(alpha = 0.4, size = 3) +
-  scale_colour_brewer(palette = "YlGnBu") +
-  xlim(0,0.8) +
-  ylim(0.4,1.3)
-
-ggplot(data = QR, aes(x = density, y = residual.sugar, color = quality)) +
-  geom_point(alpha = 0.4, size = 3) +
-  scale_colour_brewer(palette = "YlGnBu") 
-
-
-ggplot(data = QR, aes(x = density, y = alcohol, color = quality)) +
-  geom_point(alpha = 0.4, size = 3) +
-  scale_colour_brewer(palette = "YlGnBu") 
 
 #Quality back to numeric so other plots still work:
 QR$quality <- as.numeric(QR$quality)
 
 ```
 
-Though not wholly successful the plan here was to was to map out areas of highest quality over the variable of highest impact on wine quality. Though the relationships explored in the previous section between were linear, it was clear that for high and low quality wines these relationships oftemn broke down. The aim of the previous plots was to see if high or low quality wines cluster in certain intersections of two variables.
+Previous analysis above indicates the strongest correlations to wine quality are volatile acidity, citric acid and sulphates. To try understand how these variables determine quality as well as how the variables themselves interact the most influential variable on quality , volatile acidity, was plotted against the two next influential variables, citric acid and sulphates. Given the complex nature of wine quality it is possible that there exists 'sweet spots' for the variables that influence the wine quality. In the plots above it can be seen that there is a clustering of high quality for wines with high citric acid and low volatile acidity. More interestingly the is a clustering of high quality wines for higher sulphate content but this breaks down for higher sulphate wines with a higher volatile acidity.
 
 
-```{r echo=FALSE, More_plots_LM}
 
+```{r echo=FALSE,warning=FALSE,message=FALSE, Plots_LM}
+
+#Creating a subset with outlier removed for a more robust model.
 QR.sub <- subset(QR, volatile.acidity < 1.2 & sulphates < 1 & citric.acid != 0)
 
-ggplot(data = QR.sub, aes(x = quality, y = volatile.acidity, color = citric.acid)) +
-  geom_point(position = 'jitter', alpha = 0.3) 
+ggplot(data = QR.sub, aes(x = quality, y = volatile.acidity, 
+                          color = citric.acid)) +
+  geom_point(position = 'jitter', alpha = 0.3) +
+  geom_smooth(aes(quality, volatile.acidity),
+                method = "lm", 
+                se = FALSE,size=2)
 
-ggplot(data = QR.sub, aes(x = quality, y = volatile.acidity, color = sulphates)) +
-  geom_point(position = 'jitter', alpha = 0.3)
-
-ggplot(data = QR.sub, aes(x = quality, y = sulphates, color = citric.acid)) +
-  geom_point(position = 'jitter', alpha = 0.3)
-
-ggplot(data = QR.sub, aes(x = quality, y = citric.acid, color = volatile.acidity)) +
-  geom_point(position = 'jitter', alpha = 0.3)
-
-ggplot(data = QR.sub, aes(x = quality, y = density, color = volatile.acidity)) +
-  geom_point(position = 'jitter', alpha = 0.3)
-
-
-
-lm1 <- lm(quality ~ I(-volatile.acidity), data = QR.sub)
+lm1 <- lm(quality ~ I(-volatile.acidity), data = QR.sub)#
 lm2 <- update(lm1, ~ . + I(-citric.acid))
+summary(lm2)
+```
+
+Based on the multivariate plots above and the previous analysis, the first step in creating a model for quality in red wines would be look at volatile acidity and citric acid. The plot above confirms that volatile acidity has an inverse relationship with quality and the overlay of citric acid content confirms the negative impact of high citric acid content. Based on these observations a linear model has been generated based on an inverse relation of quality to both volatile acidity and citric acid.
+
+
+```{r echo=FALSE,warning=FALSE,message=FALSE, More_plots_LM}
+
+ggplot(data = QR.sub, aes(x = quality, y = sulphates, color = density)) +
+         geom_point(position = 'jitter', alpha = 0.4, size = 2) +
+    geom_smooth(aes(quality, 
+                    sulphates),
+                method = "lm", 
+                se = FALSE,size=2)
+
+
 lm3 <- update(lm2, ~ . + sulphates)
 lm4 <- update(lm3, ~ . + I(-density))
 summary(lm3)
 anova(lm3)
 mtable(lm1,lm2,lm3,lm4, sdigits = 2)
 
-
-
 ```
 
-Plots generated to look for potential models. Linear model generated but of very limited fit.
+To further enhance the linear model suphates was plotted against quality to verify the existence of a positive relationship identified earlier. The overlay of density to the plot does not give as clear an impact as the addition of citric acid though adding this to the linear model margionally improves the R squared value.
+
 
 # Multivariate Analysis
 
 ### Talk about some of the relationships you observed in this part of the investigation. Were there features that strengthened each other in terms of looking at your feature(s) of interest?
 
-For citric acid and volatile acidity its clear the majority of highest quality wines are of both high citirc acid and low volatile acidity. The high quality wines that are not of low volatile acidicity are of low citric acid though this may just be a consequence of the clear inverse linear relationship between citric acid and volatile acidity. A correlation test confirms this relation with a R value of -0.55.
+For citric acid and volatile acidity its clear the majority of highest quality wines are of both high citric acid and low volatile acidity. The high quality wines that are not of low volatile acidity are of low citric acid though this may just be a consequence of the clear inverse linear relationship between citric acid and volatile acidity. A correlation test confirms this relation with a R value of -0.55.
 
-Looking a sulphates versus volatile acidity the high quality wines the highest quality wines are most promenent in the regeion of low volatile acidity and high sulphates content. The seperation between high and low quality wines can be seen clearly with the majority of low and mid quality wines clustering in the area of higher volatile acidity and lower sulphate content.
-In this case there is again an inverse linear relationship visible between the sulphate and volatile acidity content and a Pearsons R value of -0.26 confirms this less clear correlation. 
-
-Finally for sulphates versus citric acid the highest quality wines cluster in the area of high sulphate content. The seperation by sulphate content is clearer cut than citirc acid with some higher quality wines visible for lower citric acid but a much lower population of high quality wines in the low sulphates region (though with a tighter distribution of values). In this case there is no strong relationship between the variables.
+Looking a sulphates versus volatile acidity the high quality wines the highest quality wines are most prominent in the region of low volatile acidity and high sulphates content. The separation between high and low quality wines can be seen clearly with the majority of low and mid quality wines clustering in the area of higher volatile acidity and lower sulphate content.
+In this case there is again an inverse linear relationship visible between the sulphate and volatile acidity content and a Pearson's R value of -0.26 confirms this less clear correlation. 
 
 
 
@@ -737,22 +755,22 @@ As detailed above there was an inverse relationship between citric acid and vola
 
 ### OPTIONAL: Did you create any models with your dataset? Discuss the strengths and limitations of your model.
 
-An attempt was made to generate a linear model for wine quality using the volatile acidity, citric acid and sulphate content of the wines. A subset of the dataset was used to exclude outliers and simplify the model.
-The results show this is a somewhat weak model with low R squared value 0.22 for the completed model. This model could serve as a basic starting point for generating a more complex model of red wine quality but could not be relied upon to accuratly predict wine quality based on the variables examined.
+An attempt was made to generate a linear model for wine quality using the volatile acidity, citric acid and sulphate content of the wines. A subset of the data-set was used to exclude outliers and simplify the model.
+The results show this is a somewhat weak model with low R squared value 0.22 for the completed model. This model could serve as a basic starting point for generating a more complex model of red wine quality but could not be relied upon to accurately predict wine quality based on the variables examined.
 
 ------
 
 # Final Plots and Summary
 
 ### Plot One
-```{r echo=FALSE, Plot_One}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Plot_One}
 
 ggplot(data = QR, aes(x = quality, y = citric.acid)) +
   geom_boxplot(aes(group = quality)) +
   geom_point(position = 'jitter', alpha = 0.2) +
   geom_line(data = QR.median, size = 2, lineend = 'round',
-            aes(x = quality, y = citric.acid, color = 'median')) +
-  annotate("text", x = 5.5, y = 0.9, size = 8, color = 'red',
+            aes(x = quality-2, y = citric.acid, color = 'median')) +
+  annotate("text", x = 3.5, y = 0.9, size = 8, color = 'red',
            label = paste('R = ', cor(x = QR$quality, 
                                      y = QR$citric.acid))) +
   ggtitle("Red Wine Citric Acid Vs Quality Value")
@@ -763,20 +781,20 @@ ggplot(data = QR, aes(x = quality, y = citric.acid)) +
 
 ### Description One
 
-The graph above shows the impact of citric acid content on the quality of red wines, with increasing median citric acid content evident with increasing quality value. Displayed above is the Pearsons R value for citric acid content versus quality value indicating a small positive correllation between citric acid and teh quality of red wine.
+The graph above shows the impact of citric acid content on the quality of red wines, with increasing median citric acid content evident with increasing quality value. Displayed above is the Pearson's R value for citric acid content versus quality value indicating a small positive correlation between citric acid and the quality of red wine.
 
 ### Plot Two
-```{r echo=FALSE, Plot_Two}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Plot_Two}
 
 ggplot(data = QR, aes(x = quality, y = volatile.acidity)) +
   geom_point(alpha = 0.3, position = 'jitter') +
   geom_line(data = QR.means, lineend = 'round', 
-            aes(x = quality, y = volatile.acidity, color = 'Mean'), 
+            aes(x = quality-2, y = volatile.acidity, color = 'Mean'), 
             size = 1.5) +
   geom_line(data = QR.median, lineend = 'round', 
-            aes(x = quality, y = volatile.acidity, 
+            aes(x = quality-2, y = volatile.acidity, 
                 color = 'Median'), size = 1.5) +
-  annotate("text", x = 5.5, y = 1.4, size = 8, color = 'red',
+  annotate("text", x = 3.5, y = 1.4, size = 8, color = 'red',
            label = paste('R = ', cor(x = QR$quality, 
                                      y = QR$volatile.acidity))) +
   ggtitle("Red Wine Volatile Acidity Vs Quality Value")
@@ -785,10 +803,10 @@ ggplot(data = QR, aes(x = quality, y = volatile.acidity)) +
 
 ### Description Two
 
-Ths chart shows the relationship between volatile acidity and the quality of red wines with the value for Pearsons R displayed above. The negative impact on quality is clear from both the negative R value and the clear trend in mean and median citric acid content.
+This chart shows the relationship between volatile acidity and the quality of red wines with the value for Pearson's R displayed above. The negative impact on quality is clear from both the negative R value and the clear trend in mean and median citric acid content.
 
 ### Plot Three
-```{r echo=FALSE, Plot_Three}
+```{r echo=FALSE,warning=FALSE,message=FALSE, Plot_Three}
 
 QR$quality <- as.factor(QR$quality)
 
@@ -799,6 +817,7 @@ ggplot(data = QR, aes(x = volatile.acidity, y = citric.acid, color = quality)) +
                                           reverse = TRUE, 
                                           override.aes = list(alpha = 1, size = 4))) +
   xlim(0.1,1) + ylim(0,0.8) +
+  geom_smooth(method = 'lm', se = F, size = 2) +
   ggtitle("Map of Quality Over Citric Acid and Volatile Acidity")
 
 
@@ -812,10 +831,10 @@ This plot maps out the areas of highest quality red wines over the two variables
 
 # Reflection
 
-The red wines data set contains a lot of interesting information on red wines and their chemical properties. Though there are multiple interesting relationships between these chemical indicators the most intersting question that could be asked of this data is how these physical attributes play into making a wine of high or low quality. A strong negative relationship between volatile acidity and quality was observed and a linear model based on this and other correlated variables created (though with limited predictive power).
+The red wines data set contains a lot of interesting information on red wines and their chemical properties. Though there are multiple interesting relationships between these chemical indicators the most interesting question that could be asked of this data is how these physical attributes play into making a wine of high or low quality. A strong negative relationship between volatile acidity and quality was observed and a linear model based on this and other correlated variables created (though with limited predictive power).
 
-Getting a clear picture of what determines quality in red wines from this data set has proved challenging for several reasons. Firstly the vast majority of the wines fall into the two centermost quality values of 5 and 6. As a result many factors that influence wine quality break down at either end of the scale and making robust models of wine quality are hampered by this thight distribution. An associated issue with this analysis has been the low number of unique values for quality, this limits the granularity of the analysis though treating the quality variable as a factor can be used to complete analysis not posible on more continous variables.
-The dataset does not include any measure of wine price, this would greatly increase the number of interesting questions that could be asked.
+Getting a clear picture of what determines quality in red wines from this data set has proved challenging for several reasons. Firstly the vast majority of the wines fall into the two center-most quality values of 5 and 6. As a result many factors that influence wine quality break down at either end of the scale and making robust models of wine quality are hampered by this tight distribution. An associated issue with this analysis has been the low number of unique values for quality, this limits the granularity of the analysis though treating the quality variable as a factor can be used to complete analysis not possible on more continuous variables.
+The data-set does not include any measure of wine price, this would greatly increase the number of interesting questions that could be asked.
 Within each quality grouping there is a high degree of overlap for the values of each of the other associated variables that makes it hard to discern clear patterns of their impact to quality.
 
-For next steps the linear model could be expanded to include other variables of lesser correllation with quality or redesigned completly. A simples but possible more informative way of comparing what a good vs a bad quality wines attributes are may be to bucket wines of quality 2-5 and 6-8 into two groups and compare their summary statistics to find out what makes the high quality group different to the low quality group. Ther may also be a way to combine multiple chemical properties of the wine into a single variable with greater predictive power on wine quality. Some attempts at this were made above but with no success.
+For next steps the linear model could be expanded to include other variables of lesser correlation with quality or redesigned completely. A simple but possible more informative way of comparing what a good vs a bad quality wines attributes are may be to bucket wines of quality 2-5 and 6-8 into two groups and compare their summary statistics to find out what makes the high quality group different to the low quality group. There may also be a way to combine multiple chemical properties of the wine into a single variable with greater predictive power on wine quality. Some attempts at this were made above but with no success.
