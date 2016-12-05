@@ -595,10 +595,10 @@ The clearest differences can be seen in the populations of bins 5, 6 and 7. The 
 ggplot(data = QR, aes(x = quality, y = sulphates)) +
   geom_point(alpha = 0.3, position = 'jitter') +
   geom_line(data = QR.means, lineend = 'round', 
-            aes(x = quality-2, y = sulphates, color = 'Mean'), 
+            aes(x = quality, y = sulphates, color = 'Mean'), 
             size = 1.5) +
   geom_line(data = QR.median, lineend = 'round', 
-            aes(x = quality-2, y = sulphates, 
+            aes(x = quality, y = sulphates, 
                 color = 'Median'), size = 1.5) 
 
 cor.test(QR$quality, QR$sulphates)
@@ -612,10 +612,10 @@ The correlation between wine quality and sulphates appears more clear cut with a
 ggplot(data = QR, aes(x = quality, y = volatile.acidity)) +
   geom_point(alpha = 0.3, position = 'jitter') +
   geom_line(data = QR.means, lineend = 'round', 
-            aes(x = quality-2, y = volatile.acidity, color = 'Mean'), 
+            aes(x = quality, y = volatile.acidity, color = 'Mean'), 
             size = 1.5) +
   geom_line(data = QR.median, lineend = 'round', 
-            aes(x = quality-2, y = volatile.acidity, 
+            aes(x = quality, y = volatile.acidity, 
                 color = 'Median'), size = 1.5)
 
 cor.test(QR$quality, QR$volatile.acidity)
