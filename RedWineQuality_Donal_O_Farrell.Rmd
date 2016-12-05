@@ -709,14 +709,6 @@ ggplot(data = QR.sub, aes(x = quality, y = volatile.acidity,
                 method = "lm", 
                 se = FALSE,size=2)
 
-  ggplot(aes(x = alcohol, 
-           y = sulphates  , color = factor(quality)), 
-       data = red.wine) +
-      geom_point(alpha = 0.8, size = 2) +
-      geom_smooth(method = "lm", se = FALSE,size=1)  +
-  scale_color_brewer(type='seq',
-                   guide=guide_legend(title='Quality'))
-
 lm1 <- lm(quality ~ I(-volatile.acidity), data = QR.sub)#
 lm2 <- update(lm1, ~ . + I(-citric.acid))
 summary(lm2)
