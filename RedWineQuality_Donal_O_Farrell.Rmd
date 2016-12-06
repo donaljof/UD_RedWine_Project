@@ -17,7 +17,6 @@ Donal O Farrell
 library(ggplot2)
 library(GGally)
 library(dplyr)
-library(tidyr)
 library(stats)
 library(memisc)
 library(grid)
@@ -58,12 +57,22 @@ str(QR)
 summary(QR)
 
 #Residual sugar quantile assymetry
-print("Ratio of range of 50%-75% quantile range to 25%-50% quantile range showing assymetry of distrbution, skewed towards the higher values of Residual Sugar. ")
-Quantile_ratio_sugar <- (quantile(QR$residual.sugar, 3/4) - quantile(QR$residual.sugar, 1/2)) / (quantile(QR$residual.sugar, 1/2) - quantile(QR$residual.sugar, 1/4))
+print("Ratio of range of 50%-75% quantile range to 25%-50% quantile range
+      showing assymetry of distrbution, skewed towards the higher values
+      of Residual Sugar. ")
+Quantile_ratio_sugar <- (quantile(QR$residual.sugar, 3/4) 
+                         - quantile(QR$residual.sugar, 1/2)) / 
+  (quantile(QR$residual.sugar, 1/2) - quantile(QR$residual.sugar, 1/4))
 Quantile_ratio_sugar
-# Could have created a funtion here but only plan on doing this one more time so CTRL+V will do.
-print("Ratio of range of 50%-75% quantile range to 25%-50% quantile range showing assymetry of distrbution, skewed towards the higher values of Alchohol. ")
-Quantile_ratio_alcohol <- (quantile(QR$alcohol, 3/4) - quantile(QR$alcohol, 1/2)) / (quantile(QR$alcohol, 1/2) - quantile(QR$alcohol, 1/4))
+# Could have created a funtion here but only plan on 
+#doing this one more time so CTRL+V will do.
+print("Ratio of range of 50%-75% quantile range to 25%-50% quantile 
+      range showing assymetry of distrbution, skewed towards the 
+      higher values of Alchohol. ")
+Quantile_ratio_alcohol <- (quantile(QR$alcohol, 3/4) - 
+                             quantile(QR$alcohol, 1/2)) / 
+  (quantile(QR$alcohol, 1/2) - 
+     quantile(QR$alcohol, 1/4))
 Quantile_ratio_alcohol
 
 #based on the discrete values of quality, this parameter may be more usefull
@@ -212,9 +221,11 @@ ggplot(data = Density.mean, mapping = aes(x = quality, y = avg_density)) +
 
 ggplot() +
   geom_point(data = Density.mean, 
-             mapping = aes(x = quality, y = avg_density, color = 'Mean Desnity')) +
+             mapping = aes(x = quality, y = avg_density, 
+                           color = 'Mean Desnity')) +
   geom_point(data = Density.median, 
-             mapping = aes(x = quality, y = median_density, color = 'Median Density'))
+             mapping = aes(x = quality, y = median_density, 
+                           color = 'Median Density'))
 
 ```
 
@@ -276,7 +287,8 @@ ggplot(data = subset(QR, citric.acid ==0), aes(x = quality)) +
 #distribution of zero citric acid across quality bins 
 #with nonzero counts stacked
 ggplot(data = QR,aes(x = quality)) +
-  ggtitle('Counts of wine with no citric acid (RED) and containing citric acid (YELLOW) by quality') +
+  ggtitle('Counts of wine with no citric acid (RED) and 
+          containing citric acid (YELLOW) by quality') +
   geom_histogram(data = subset(QR, citric.acid != 0),
                  binwidth = 0.5, fill = 'yellow') +
   geom_histogram(data = subset(QR, citric.acid == 0),
@@ -543,7 +555,9 @@ A scatter plot of residual sugar and density shows an influence of residual suga
 
 ```{r echo=FALSE,warning=FALSE,message=FALSE, Bivariate_Plots_Chlorides}
 
-QR.means <- subset(QR, select = -Sweetness)  %>% group_by(quality) %>% summarise_each(funs(mean))
+QR.means <- subset(QR, select = -Sweetness)  %>% 
+  group_by(quality) %>% 
+  summarise_each(funs(mean))
 
 QR.median <- subset(QR, select = -Sweetness) %>% 
   group_by(quality) %>%
@@ -577,8 +591,12 @@ Chloride content looks static along the quality buckets.
 
 ggplot(data = QR, aes(x = quality, y = QR$total.sulfur.dioxide)) +
   geom_point(position = 'jitter', alpha = 0.1) +
-  geom_line(data = QR.means, lineend = 'round', aes(x = quality, y = total.sulfur.dioxide, color = 'Mean'), size = 1.5) +
-  geom_line(data = QR.median, lineend = 'round', aes(x = quality, y = total.sulfur.dioxide, color = 'Median'), size = 1.5)
+  geom_line(data = QR.means, lineend = 'round', 
+            aes(x = quality, y = total.sulfur.dioxide, color = 'Mean'), 
+            size = 1.5) +
+  geom_line(data = QR.median, lineend = 'round', 
+            aes(x = quality, y = total.sulfur.dioxide, color = 'Median'), 
+            size = 1.5)
 
 cor.test(QR$quality, QR$total.sulfur.dioxide)
 
@@ -668,14 +686,16 @@ As mentioned above the strongest relationship was the negative impact of volatil
 #Quality as a factor needed for analysis below:
 QR$quality <- as.factor(QR$quality)
 
-p1 <- ggplot(data = QR, aes(x = volatile.acidity, y = citric.acid, color = quality)) +
+p1 <- ggplot(data = QR, aes(x = volatile.acidity, y = citric.acid, 
+                            color = quality)) +
   geom_point(alpha = 0.4, size = 3) +
   scale_colour_brewer(palette = "YlGnBu") +
   xlim(0.1,1.2) +
   ylim(0,0.8) +
   geom_smooth(method = "lm", se = FALSE,size=1) 
 
-p2 <- ggplot(data = QR, aes(x = volatile.acidity, y = sulphates, color = quality)) +
+p2 <- ggplot(data = QR, aes(x = volatile.acidity, y = sulphates, 
+                            color = quality)) +
   geom_point(alpha = 0.4, size = 3) +
   scale_colour_brewer(palette = "YlGnBu") +
   xlim(0.1,1.2) +
@@ -700,7 +720,8 @@ Previous analysis above indicates the strongest correlations to wine quality are
 ```{r echo=FALSE,warning=FALSE,message=FALSE, Plots_LM}
 
 #Creating a subset with outlier removed for a more robust model.
-QR.sub <- subset(QR, volatile.acidity < 1.2 & sulphates < 1 & citric.acid != 0)
+QR.sub <- subset(QR, volatile.acidity < 1.2 & 
+                   sulphates < 1 & citric.acid != 0)
 
 ggplot(data = QR.sub, aes(x = quality, y = volatile.acidity, 
                           color = citric.acid)) +
@@ -773,6 +794,8 @@ ggplot(data = QR, aes(x = quality, y = citric.acid)) +
   annotate("text", x = 3.5, y = 0.9, size = 8, color = 'red',
            label = paste('R = ', cor(x = QR$quality, 
                                      y = QR$citric.acid))) +
+  xlab("Quality Categorization") +
+  ylab("Citric Acid (g / dm^3)") +
   ggtitle("Red Wine Citric Acid Vs Quality Value")
 
 
@@ -797,6 +820,8 @@ ggplot(data = QR, aes(x = quality, y = volatile.acidity)) +
   annotate("text", x = 3.5, y = 1.4, size = 8, color = 'red',
            label = paste('R = ', cor(x = QR$quality, 
                                      y = QR$volatile.acidity))) +
+  xlab("Quality Categorization") +
+  ylab("Volatile Acidity (g / dm^3)") +
   ggtitle("Red Wine Volatile Acidity Vs Quality Value")
 
 ```
@@ -810,14 +835,19 @@ This chart shows the relationship between volatile acidity and the quality of re
 
 QR$quality <- as.factor(QR$quality)
 
-ggplot(data = QR, aes(x = volatile.acidity, y = citric.acid, color = quality)) +
+ggplot(data = QR, aes(x = volatile.acidity, 
+                      y = citric.acid, 
+                      color = quality)) +
   geom_point(alpha = 0.3, size = 4) +
   scale_color_brewer(type = 'seq', palette = 13,
                      guide = guide_legend(title = 'Quality', 
                                           reverse = TRUE, 
-                                          override.aes = list(alpha = 1, size = 4))) +
+                                          override.aes = list(alpha = 1, 
+                                                              size = 4))) +
   xlim(0.1,1) + ylim(0,0.8) +
   geom_smooth(method = 'lm', se = F, size = 2) +
+  xlab("Volatile Acidity (g / dm^3)") +
+  ylab("Citric Acid (g / dm^3)") +
   ggtitle("Map of Quality Over Citric Acid and Volatile Acidity")
 
 
