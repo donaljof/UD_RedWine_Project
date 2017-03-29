@@ -1,8 +1,9 @@
 ---
 output: html_document
 ---
-##Red Wine Quality Dataset Analysis With R 
-#####(Udacity Data Analsysis Nanodegree)
+## Red Wine Quality Dataset Analysis With R 
+
+##### (Udacity Data Analsysis Nanodegree)
 Donal O Farrell
 ========================================================
 
