@@ -2,4 +2,4 @@
 
 Udacity P4 'Data analysis with R' Project.
 Data set used: Red Wine Quality.
-Anuthor: Donal O Farrell.
+Author: Donal O Farrell.
